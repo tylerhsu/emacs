@@ -1,0 +1,5 @@
+Do this shit:
+
+M-x byte-compile-file js2.el
+
+other stuff to come...
