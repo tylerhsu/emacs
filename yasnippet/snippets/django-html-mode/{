@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: {% ... %}
+# key: {
+# condition: t
+# --
+{% $1 %}$0

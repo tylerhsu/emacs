@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: block indented ... endblock
+# key: iblock
+# --
+{% block $1 %}
+  $0
+{% endblock %}

@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: Tastypie ModelResource
+# key: modelresource
+# --
+class $1(ModelResource):
+  $0
+  class Meta:
+    queryset = $2
+    resource_name = '$3'
