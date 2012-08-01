@@ -141,8 +141,7 @@
 
 ; show system name and buffer's full path
 (setq frame-title-format
-      (list (format "%s %%S: %%j " (system-name))
-        '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
+      '(buffer-file-name "%f" (dired-directory dired-directory "%b")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;KEY BINDINGS;;;;;;;;;;;;;;;;;;;;
