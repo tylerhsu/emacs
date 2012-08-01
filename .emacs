@@ -11,6 +11,9 @@
 (add-to-list 'load-path elisp-dir)
 
 ;;MAJOR MODES
+; JS2 mode
+(autoload 'js2-mode "js2-mode" nil t)
+
 ; Mustache
 (autoload 'mustache-mode "mustache-mode" nil t)
 
@@ -38,6 +41,7 @@
             ("\\.html.erb$" . eruby-html-mumamo-mode)
             ("\\.djhtml$" . django-nxhtml-mumamo-mode)
             ("\\.mustache$" . mustache-mode)
+            ("\\.js$" . js2-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
             ) auto-mode-alist))
 
@@ -134,6 +138,11 @@
 ; set default window dimensions
 (if (window-system)
     (set-frame-size (selected-frame) 81 65))
+
+; show system name and buffer's full path
+(setq frame-title-format
+      (list (format "%s %%S: %%j " (system-name))
+        '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;KEY BINDINGS;;;;;;;;;;;;;;;;;;;;
