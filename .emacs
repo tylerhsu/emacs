@@ -43,6 +43,7 @@
             ("\\.mustache$" . mustache-mode)
             ("\\.js$" . js2-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
+            ("\\.pt$" . nxhtml-mode)
             ) auto-mode-alist))
 
 ;;OTHER MODULES
@@ -132,7 +133,8 @@
 (global-set-key (kbd "<down>") 'scroll-up-line)
 (global-set-key [f3] 'kill-buffer)
 (global-set-key [f4] 'linum-mode)
-;(global-set-key [f5] 'my-majmodpri-apply)
+(global-set-key [f5] 'desktop-save)
+(global-set-key [f7] 'desktop-read)
 (global-set-key [f8] 'goto-line)
 ;(global-set-key [f9] 'speedbar)
 (global-set-key [f12] 'compile)
@@ -303,6 +305,9 @@
 ;;;;;;;;;;;;;;;;;;MISCELLANEOUS;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; save everything when saving a desktop -- including tramp buffers.
+(setq desktop-files-not-to-save "^$")
+
 ;; Mumamo is making emacs 23.3 freak out:
 ;; (http://stackoverflow.com/a/5470584)
 (when (and (equal emacs-major-version 23)
@@ -359,6 +364,7 @@
   ;; If you edit it by hand, you could mess it up, so be careful.
   ;; Your init file should contain only one such instance.
   ;; If there is more than one, they won't work right.
+ '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
  '(speedbar-button-face ((((class color) (background dark)) (:foreground "green3"))))
  '(speedbar-directory-face ((default nil) (nil (:foreground "#4400cc" :height 0.8))))
@@ -366,3 +372,9 @@
  '(speedbar-selected-face ((default nil) (nil (:foreground "red" :underline t :height 0.8)))))
 
 (put 'downcase-region 'disabled nil)
+(custom-set-variables
+  ;; custom-set-variables was added by Custom.
+  ;; If you edit it by hand, you could mess it up, so be careful.
+  ;; Your init file should contain only one such instance.
+  ;; If there is more than one, they won't work right.
+ )
