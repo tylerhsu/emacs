@@ -65,7 +65,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; default font
-(set-default-font "Inconsolata")
+(set-default-font "Inconsolata 12")
 
 ;; remove toolbar, menu bar
 (tool-bar-mode 0)
@@ -116,19 +116,19 @@
 ;;;;;;;;;;;;;;;;;;;KEY BINDINGS;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (global-set-key (kbd "C-z") 'undo)
-(global-set-key (kbd "C-c C-p") 'my-move-line-up)
-(global-set-key (kbd "C-c C-n") 'my-move-line-down)
-(global-set-key (kbd "C-c C-j") 'duplicate-line)
+(global-set-key (kbd "C-c p") 'my-move-line-up)
+(global-set-key (kbd "C-c n") 'my-move-line-down)
+(global-set-key (kbd "C-c j") 'duplicate-line)
 (global-set-key (kbd "C-c ;") 'comment-or-uncomment-region)
 (global-set-key (kbd "C-c ]") 'tabbar-forward-tab)
 (global-set-key (kbd "C-c [") 'tabbar-backward-tab)
 (global-set-key (kbd "C-c }") 'tabbar-forward-group)
 (global-set-key (kbd "C-c {") 'tabbar-backward-group)
 (global-set-key (kbd "C-l") 'goto-line)
-(global-set-key (kbd "C-c C-r") 'rename-file-and-buffer)
-(global-set-key (kbd "C-c C-m") 'move-buffer-file)
+(global-set-key (kbd "C-c r") 'rename-file-and-buffer)
+(global-set-key (kbd "C-c m") 'move-buffer-file)
 (global-set-key (kbd "C-c , f") 'semantic-ia-fast-jump)
-(global-set-key (kbd "C-c C-k") 'my-kill-line)
+(global-set-key (kbd "C-c k") 'my-kill-line)
 (global-set-key (kbd "<up>") 'scroll-down-line)
 (global-set-key (kbd "<down>") 'scroll-up-line)
 (global-set-key [f3] 'kill-buffer)
@@ -304,6 +304,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;MISCELLANEOUS;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TRAMP default method
+(setq tramp-default-method "ssh")
 
 ;; save everything when saving a desktop -- including tramp buffers.
 (setq desktop-files-not-to-save "^$")
