@@ -95,7 +95,7 @@
 (set-face-attribute
  'tabbar-selected-face nil
  :background "black"
- :foreground "gray"
+ :foreground "yellow"
  :box nil)
 (set-face-attribute
  'tabbar-button-face nil
@@ -268,10 +268,6 @@
   (define-key actionscript-mode-map (kbd "C-c x") 'my-as3-getter-setter)
   (define-key actionscript-mode-map (kbd "C-c f") 'my-as3-import-graphical-asset)
   (define-key actionscript-mode-map (kbd "C-c a") 'as3-code-assets))
-
-(defun my-nxhtml-mode-hook ()
-  (define-key nxhtml-mode-map (kbd "C-M-p") 'my-move-line-up)
-  (define-key nxhtml-mode-map (kbd "C-M-n") 'my-move-line-down))
 
 (defun my-html-mode-hook ()
   (set (make-local-variable 'indent-line-function) 'nxml-indent-line))
