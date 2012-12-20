@@ -269,8 +269,8 @@
   (define-key actionscript-mode-map (kbd "C-c f") 'my-as3-import-graphical-asset)
   (define-key actionscript-mode-map (kbd "C-c a") 'as3-code-assets))
 
-(defun my-html-mode-hook ()
-  (set (make-local-variable 'indent-line-function) 'nxml-indent-line))
+;; (defun my-html-mode-hook ()
+;;   (set (make-local-variable 'indent-line-function) 'nxml-indent-line))
 
 (defun my-django-nxhtml-mumamo-mode-hook ()
   (setq yas/mode-symbol 'django-html-mode))
@@ -278,10 +278,10 @@
 (defun my-snippet-mode-hook ()
   (setq require-final-newline nil))
 
-(defun my-text-mode-hook ()
-  ;; Set 4-space indentation
-  (setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80))
-  (define-key text-mode-map (kbd "TAB") 'tab-to-tab-stop))
+;; (defun my-text-mode-hook ()
+;;   ;; Set 4-space indentation
+;;   (setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80))
+;;   (define-key text-mode-map (kbd "TAB") 'tab-to-tab-stop))
 
 (defun my-emacs-startup-hook ()
   (linum-mode 0))
@@ -290,9 +290,9 @@
 (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)
 (add-hook 'js-mode-hook 'my-js-mode-hook)
 (add-hook 'actionscript-mode-hook 'my-actionscript-mode-hook)
-(add-hook 'text-mode-hook 'my-text-mode-hook)
-(add-hook 'nxhtml-mode-hook 'my-nxhtml-mode-hook)
-(add-hook 'html-mode-hook 'my-html-mode-hook)
+;; (add-hook 'text-mode-hook 'my-text-mode-hook)
+;; (add-hook 'nxhtml-mode-hook 'my-nxhtml-mode-hook)
+;; (add-hook 'html-mode-hook 'my-html-mode-hook)
 (add-hook 'django-nxhtml-mumamo-mode-hook 'my-django-nxhtml-mumamo-mode-hook)
 (add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
 (add-hook 'emacs-startup-hook 'my-emacs-startup-hook)
