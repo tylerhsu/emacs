@@ -133,9 +133,8 @@
 (global-set-key (kbd "<down>") 'scroll-up-line)
 (global-set-key [f3] 'kill-buffer)
 (global-set-key [f4] 'linum-mode)
-(global-set-key [f5] 'desktop-save)
-(global-set-key [f7] 'desktop-read)
-(global-set-key [f8] 'goto-line)
+(global-set-key [f7] 'tabbar-backward-tab)
+(global-set-key [f8] 'tabbar-forward-tab)
 ;(global-set-key [f9] 'speedbar)
 (global-set-key [f12] 'compile)
 
