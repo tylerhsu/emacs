@@ -50,13 +50,6 @@
 ;Cedet
 (semantic-mode 1)
 
-;YASnippet (code completion)
-(add-to-list 'load-path (concat elisp-dir "yasnippet"))
-(require 'yasnippet)
-(setq yas/snippet-dirs (concat elisp-dir "yasnippet/snippets"))
-(setq yas/indent-line 'fixed)
-(yas/initialize)
-
 ;tabbar (enables top tabs)
 (require 'tabbar)
 
