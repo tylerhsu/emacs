@@ -1,6 +1,0 @@
-# -*- mode: snippet -*-
-# name: def __unicode__
-# key: unicode
-# --
-def __unicode__(self):
-    return u'$1' % $0
