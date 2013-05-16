@@ -61,7 +61,8 @@
 (set-default-font "Inconsolata 12")
 
 ;; remove toolbar, menu bar
-(tool-bar-mode 0)
+(if (fboundp 'tool-bar-mode)
+    (tool-bar-mode 0))
 (menu-bar-mode 0)
 
 ;; show column number
