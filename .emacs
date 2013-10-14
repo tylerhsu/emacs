@@ -262,12 +262,6 @@
   (define-key actionscript-mode-map (kbd "C-c f") 'my-as3-import-graphical-asset)
   (define-key actionscript-mode-map (kbd "C-c a") 'as3-code-assets))
 
-;; (defun my-html-mode-hook ()
-;;   (set (make-local-variable 'indent-line-function) 'nxml-indent-line))
-
-(defun my-django-nxhtml-mumamo-mode-hook ()
-  (setq yas/mode-symbol 'django-html-mode))
-
 (defun my-snippet-mode-hook ()
   (setq require-final-newline nil))
 
@@ -284,9 +278,7 @@
 (add-hook 'js-mode-hook 'my-js-mode-hook)
 (add-hook 'actionscript-mode-hook 'my-actionscript-mode-hook)
 ;; (add-hook 'text-mode-hook 'my-text-mode-hook)
-;; (add-hook 'nxhtml-mode-hook 'my-nxhtml-mode-hook)
 ;; (add-hook 'html-mode-hook 'my-html-mode-hook)
-(add-hook 'django-nxhtml-mumamo-mode-hook 'my-django-nxhtml-mumamo-mode-hook)
 (add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
 (add-hook 'emacs-startup-hook 'my-emacs-startup-hook)
 
