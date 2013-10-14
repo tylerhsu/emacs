@@ -21,27 +21,25 @@
 ; PHP
 (autoload 'php-mode "php-mode" "Major mode for editing php code." t)
 
-; nxhtml
-(autoload 'nxhtml-mode "nxhtml/autostart" nil t)
-(autoload 'django-nxhtml-mumamo-mode "nxhtml/autostart")
-(eval-after-load 'nxhtml-mode '(nxhtml-toggle-visible-warnings))
-
 ; actionscript
 (autoload 'actionscript-mode "actionscript-mode" nil t)
+
+; web mode
+(autoload 'web-mode "web-mode" nil t)
 
 ; set major mode file associations (in addition to defaults)
 (setq auto-mode-alist
   (append '(("\\.php$" . php-mode)
             ("\\.inc$" . php-mode)
-            ("\\.js.erb$" . eruby-javascript-mumamo-mode)
+            ("\\.js.erb$" . web-mode)
             ("\\.as$" . actionscript-mode)
-            ("\\.html$" . nxhtml-mode)
-            ("\\.html.erb$" . eruby-html-mumamo-mode)
-            ("\\.djhtml$" . django-nxhtml-mumamo-mode)
-            ("\\.mustache$" . mustache-mode)
+            ("\\.html$" . web-mode)
+            ("\\.html.erb$" . web-mode)
+            ("\\.djhtml$" . web-mode)
+            ("\\.mustache$" . web-mode)
             ("\\.js$" . javascript-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
-            ("\\.pt$" . nxhtml-mode)
+            ("\\.pt$" . web-mode)
             ) auto-mode-alist))
 
 ;;OTHER MODULES
