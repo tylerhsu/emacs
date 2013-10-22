@@ -287,7 +287,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TRAMP default method
+(require 'tramp)
 (setq tramp-default-method "ssh")
+(add-to-list 'tramp-default-proxies-alist
+             '("\\." "\\`mp-janitor\\'" "/ssh:%h:"))
 
 ;; save everything when saving a desktop -- including tramp buffers.
 (setq desktop-files-not-to-save "^$")
