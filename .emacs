@@ -27,6 +27,9 @@
 ; web mode
 (autoload 'web-mode "web-mode" nil t)
 
+; yaml mode
+(autoload 'yaml-mode "yaml-mode" nil t)
+
 ; set major mode file associations (in addition to defaults)
 (setq auto-mode-alist
   (append '(("\\.php$" . php-mode)
@@ -40,6 +43,7 @@
             ("\\.js$" . javascript-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
             ("\\.pt$" . web-mode)
+            ("\\.yml$" . yaml-mode)
             ) auto-mode-alist))
 
 ;;OTHER MODULES
