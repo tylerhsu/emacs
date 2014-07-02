@@ -10,6 +10,9 @@
 
 (add-to-list 'load-path elisp-dir)
 
+; Automatically revert buffers when they change on disk
+(global-auto-revert-mode 1)
+
 ;;MAJOR MODES
 
 ; Mustache
