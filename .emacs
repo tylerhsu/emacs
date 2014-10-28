@@ -6,7 +6,7 @@
     (defvar elisp-dir
       (concat (getenv "emacs_dir") "/lisp/"))
   (defvar elisp-dir
-    (concat "~/.emacs.d/")))
+    (concat "~/.emacs.d/lisp")))
 
 (add-to-list 'load-path elisp-dir)
 
@@ -33,6 +33,9 @@
 ; yaml mode
 (autoload 'yaml-mode "yaml-mode" nil t)
 
+; jade mode
+(autoload 'jade-mode "jade-mode" nil t)
+
 ; set major mode file associations (in addition to defaults)
 (setq auto-mode-alist
   (append '(("\\.php$" . php-mode)
@@ -47,6 +50,7 @@
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
             ("\\.pt$" . web-mode)
             ("\\.yml$" . yaml-mode)
+            ("\\.jade$" . jade-mode)
             ) auto-mode-alist))
 
 ;;OTHER MODULES
