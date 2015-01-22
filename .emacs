@@ -10,6 +10,13 @@
 
 (add-to-list 'load-path elisp-dir)
 
+; load MELPA packages
+(when (>= emacs-major-version 24)
+  (require 'package)
+  (package-initialize)
+  (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+  )
+
 ; Automatically revert buffers when they change on disk
 (global-auto-revert-mode 1)
 
@@ -63,6 +70,12 @@
 ;uniquify buffer names by appending part of the full path after them
 (require 'uniquify)
 (setq uniquify-buffer-name-style 'post-forward-angle-brackets)
+
+; enable multiple cursors
+(require 'multiple-cursors)
+
+; enable expand-region
+(require 'expand-region)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;DISPLAY;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -136,6 +149,11 @@
 (global-set-key (kbd "C-c k") 'my-kill-line)
 (global-set-key (kbd "<up>") 'scroll-down-line)
 (global-set-key (kbd "<down>") 'scroll-up-line)
+(global-set-key (kbd "C-c C-n") 'mc/mark-next-like-this)
+(global-set-key (kbd "C-c C-p") 'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c =") 'mc/edit-lines)
+(global-set-key (kbd "C-c C-c") 'er/expand-region)
+(global-set-key (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
 (global-set-key [f3] 'kill-buffer)
 (global-set-key [f4] 'linum-mode)
 (global-set-key [f7] 'tabbar-backward-tab)
