@@ -3,6 +3,8 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        indent-for-tab-command
+        repeat
         ))
 
 (setq mc/cmds-to-run-once
