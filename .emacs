@@ -53,7 +53,7 @@
             ("\\.html.erb$" . web-mode)
             ("\\.djhtml$" . web-mode)
             ("\\.mustache$" . web-mode)
-            ("\\.js$" . javascript-mode)
+            ("\\.js$" . js2-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
             ("\\.pt$" . web-mode)
             ("\\.yml$" . yaml-mode)
