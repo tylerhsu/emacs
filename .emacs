@@ -20,6 +20,9 @@
 ; Automatically revert buffers when they change on disk
 (global-auto-revert-mode 1)
 
+; Set default tab width
+(setq default-tab-width 4)
+
 ;;MAJOR MODES
 
 ; Mustache
@@ -58,6 +61,7 @@
             ("\\.pt$" . web-mode)
             ("\\.yml$" . yaml-mode)
             ("\\.jade$" . jade-mode)
+            ("\\.scss$" . css-mode)
             ) auto-mode-alist))
 
 ;;OTHER MODULES
@@ -129,41 +133,6 @@
 ; show system name and buffer's full path
 (setq frame-title-format
       '(buffer-file-name "%f" (dired-directory dired-directory "%b")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;KEY BINDINGS;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(global-set-key (kbd "C-z") 'undo)
-(global-set-key (kbd "C-c p") 'my-move-line-up)
-(global-set-key (kbd "C-c n") 'my-move-line-down)
-(global-set-key (kbd "C-c j") 'duplicate-line)
-(global-set-key (kbd "C-c ;") 'comment-or-uncomment-region)
-(global-set-key (kbd "C-c ]") 'tabbar-forward-tab)
-(global-set-key (kbd "C-c [") 'tabbar-backward-tab)
-(global-set-key (kbd "C-c }") 'tabbar-forward-group)
-(global-set-key (kbd "C-c {") 'tabbar-backward-group)
-(global-set-key (kbd "C-l") 'goto-line)
-(global-set-key (kbd "C-c r") 'rename-file-and-buffer)
-(global-set-key (kbd "C-c m") 'move-buffer-file)
-(global-set-key (kbd "C-c , f") 'semantic-ia-fast-jump)
-(global-set-key (kbd "C-c k") 'my-kill-line)
-(global-set-key (kbd "<up>") 'scroll-down-line)
-(global-set-key (kbd "<down>") 'scroll-up-line)
-(global-set-key (kbd "C-c C-n") 'mc/mark-more-like-this-extended)
-(global-set-key (kbd "C-c C-p") 'mc/mark-previous-like-this)
-(global-set-key (kbd "C-c C-l") 'mc/edit-lines)
-(global-set-key (kbd "C-c =") 'mc/mark-all-like-this)
-(global-set-key (kbd "C-c C-c") 'er/expand-region)
-(global-set-key (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
-(global-set-key [f3] 'kill-buffer)
-(global-set-key [f4] 'linum-mode)
-(global-set-key [f7] 'tabbar-backward-tab)
-(global-set-key [f8] 'tabbar-forward-tab)
-;(global-set-key [f9] 'speedbar)
-(global-set-key [f12] 'compile)
-
-(if (eq system-type 'gnu/linux)
-    (global-set-key [f11] 'gnome-fullscreen))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;CUSTOM FUNCTIONS;;;;;;;;;;;;;;;;
@@ -311,6 +280,59 @@
 ;; (add-hook 'html-mode-hook 'my-html-mode-hook)
 (add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
 (add-hook 'emacs-startup-hook 'my-emacs-startup-hook)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;MINOR MODES;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; my key bindings
+(defvar my-keys-minor-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-z") 'undo)
+    (define-key map (kbd "C-c p") 'my-move-line-up)
+    (define-key map (kbd "C-c n") 'my-move-line-down)
+    (define-key map (kbd "C-c j") 'duplicate-line)
+    (define-key map (kbd "C-c ;") 'comment-or-uncomment-region)
+    (define-key map (kbd "C-c ]") 'tabbar-forward-tab)
+    (define-key map (kbd "C-c [") 'tabbar-backward-tab)
+    (define-key map (kbd "C-c }") 'tabbar-forward-group)
+    (define-key map (kbd "C-c {") 'tabbar-backward-group)
+    (define-key map (kbd "C-l") 'goto-line)
+    (define-key map (kbd "C-c r") 'rename-file-and-buffer)
+    (define-key map (kbd "C-c m") 'move-buffer-file)
+    (define-key map (kbd "C-c , f") 'semantic-ia-fast-jump)
+    (define-key map (kbd "C-c k") 'my-kill-line)
+    (define-key map (kbd "<up>") 'scroll-down-line)
+    (define-key map (kbd "<down>") 'scroll-up-line)
+    (define-key map (kbd "C-c C-n") 'mc/mark-more-like-this-extended)
+    (define-key map (kbd "C-c C-p") 'mc/mark-previous-like-this)
+    (define-key map (kbd "C-c C-l") 'mc/edit-lines)
+    (define-key map (kbd "C-c =") 'mc/mark-all-like-this)
+    (define-key map (kbd "C-c C-c") 'er/expand-region)
+    (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
+    (define-key map [f3] 'kill-buffer)
+    (define-key map [f4] 'linum-mode)
+    (define-key map [f7] 'tabbar-backward-tab)
+    (define-key map [f8] 'tabbar-forward-tab)
+    ;(define-key map [f9] 'speedbar)
+    (define-key map [f12] 'compile)
+
+	(if (eq system-type 'gnu/linux)
+		(define-key map [f11] 'gnome-fullscreen))
+    map)
+  "my-keys-minor-mode keymap.")
+
+(define-minor-mode my-keys-minor-mode
+  "A minor mode so that my key settings override annoying major modes."
+  :init-value t
+  :lighter " my-keys")
+
+(my-keys-minor-mode 1)
+
+(define-minor-mode hologram-mode
+  "minor mode to conform to Fernando's code style"
+  :lighter " Hologram"
+  (setq indent-tabs-mode t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;MISCELLANEOUS;;;;;;;;;;;;;;;;;;;;

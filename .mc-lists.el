@@ -3,11 +3,18 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        dabbrev-expand
         indent-for-tab-command
+        kill-region
         repeat
         ))
 
 (setq mc/cmds-to-run-once
       '(
+        comment-dwim
+        find-file
+        js2-mode-hide-element
+        scroll-down-line
+        scroll-up-line
         suspend-frame
         ))
