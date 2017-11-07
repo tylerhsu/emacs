@@ -7,6 +7,7 @@
         indent-for-tab-command
         kill-region
         repeat
+        tabbar-backward-tab
         ))
 
 (setq mc/cmds-to-run-once

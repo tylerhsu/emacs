@@ -56,13 +56,21 @@
             ("\\.html.erb$" . web-mode)
             ("\\.djhtml$" . web-mode)
             ("\\.mustache$" . web-mode)
+            (".*/harvest/.*\\.js[x]?$" . web-mode) ; assume all .js files under the 'harvest' directory are jsx and use web mode
             ("\\.js$" . js2-mode)
+            ("\\.jsx$" . web-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
             ("\\.pt$" . web-mode)
             ("\\.yml$" . yaml-mode)
             ("\\.jade$" . jade-mode)
+            ("\\.pug$" . jade-mode)
+            ("\\.css$" . css-mode)
             ("\\.scss$" . css-mode)
             ) auto-mode-alist))
+
+; tell web-mode to use the "jsx" content type for all .js files under the 'harvest' directory
+(setq web-mode-content-types-alist
+      '(("jsx"  . ".*/harvest/.*\\.js[x]?$")))
 
 ;;OTHER MODULES
 ;Cedet
