@@ -161,6 +161,8 @@
   (let ((col (current-column)))
     (save-excursion (next-line)
       (transpose-lines -1))
+    (previous-line)
+    (previous-line)
     (move-to-column col)))
 
 (defun my-move-line-down() 
