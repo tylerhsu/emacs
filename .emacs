@@ -260,10 +260,6 @@
 (defun my-ruby-mode-hook ()
   (define-key ruby-mode-map (kbd "C-<return>") 'my-ruby-newline))
 
-(defun my-js-mode-hook ()
-  (setq yas/mode-symbol 'javascript-mode)
-  (setq javascript-indent-level 2))
-
 (defun my-actionscript-mode-hook ()
   (setq standard-indent 2)
   (define-key actionscript-mode-map (kbd "C-c g") 'my-as3-getter)
@@ -271,9 +267,6 @@
   (define-key actionscript-mode-map (kbd "C-c x") 'my-as3-getter-setter)
   (define-key actionscript-mode-map (kbd "C-c f") 'my-as3-import-graphical-asset)
   (define-key actionscript-mode-map (kbd "C-c a") 'as3-code-assets))
-
-(defun my-snippet-mode-hook ()
-  (setq require-final-newline nil))
 
 ;; (defun my-text-mode-hook ()
 ;;   ;; Set 4-space indentation
@@ -283,12 +276,14 @@
 (defun my-emacs-startup-hook ()
   (linum-mode 0))
 
+(defun my-web-mode-hook ()
+  (setq web-mode-markup-indent-offset 2))
+
 ; Add hooks
 (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)
 (add-hook 'js-mode-hook 'my-js-mode-hook)
 (add-hook 'actionscript-mode-hook 'my-actionscript-mode-hook)
-;; (add-hook 'text-mode-hook 'my-text-mode-hook)
-;; (add-hook 'html-mode-hook 'my-html-mode-hook)
+(add-hook 'web-mode-hook 'my-web-mode-hook)
 (add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
 (add-hook 'emacs-startup-hook 'my-emacs-startup-hook)
 
