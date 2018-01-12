@@ -277,11 +277,12 @@
   (linum-mode 0))
 
 (defun my-web-mode-hook ()
-  (setq web-mode-markup-indent-offset 2))
+  (setq web-mode-markup-indent-offset 2)
+  (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
+  )
 
 ; Add hooks
 (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)
-(add-hook 'js-mode-hook 'my-js-mode-hook)
 (add-hook 'actionscript-mode-hook 'my-actionscript-mode-hook)
 (add-hook 'web-mode-hook 'my-web-mode-hook)
 (add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
