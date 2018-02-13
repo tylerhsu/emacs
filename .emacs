@@ -411,21 +411,22 @@
 (setq make-backup-files nil)
 
 (custom-set-faces
-  ;; custom-set-faces was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
  '(speedbar-button-face ((((class color) (background dark)) (:foreground "green3"))))
  '(speedbar-directory-face ((default nil) (nil (:foreground "#4400cc" :height 0.8))))
  '(speedbar-file-face ((default nil) (nil (:foreground "light blue" :height 0.8))))
- '(speedbar-selected-face ((default nil) (nil (:foreground "red" :underline t :height 0.8)))))
+ '(speedbar-selected-face ((default nil) (nil (:foreground "red" :underline t :height 0.8))))
+ '(web-mode-html-tag-bracket-face ((t (:foreground "brightblack")))))
 
 (put 'downcase-region 'disabled nil)
 (custom-set-variables
-  ;; custom-set-variables was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  )
