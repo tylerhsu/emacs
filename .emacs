@@ -56,9 +56,8 @@
             ("\\.html.erb$" . web-mode)
             ("\\.djhtml$" . web-mode)
             ("\\.mustache$" . web-mode)
-            (".*/harvest/.*\\.js[x]?$" . web-mode) ; assume all .js files under the 'harvest' directory are jsx and use web mode
-            ("\\.js$" . js2-mode)
-            ("\\.mjs$" . js2-mode)
+            ("\\.js$" . web-mode)
+            ("\\.mjs$" . web-mode)
             ("\\.jsx$" . web-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
             ("\\.pt$" . web-mode)
