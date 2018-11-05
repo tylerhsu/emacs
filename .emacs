@@ -57,6 +57,7 @@
             ("\\.djhtml$" . web-mode)
             ("\\.mustache$" . web-mode)
             ("\\.js$" . web-mode)
+            ("\\.ts$" . web-mode)
             ("\\.mjs$" . web-mode)
             ("\\.jsx$" . web-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
