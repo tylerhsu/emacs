@@ -181,7 +181,8 @@ There are two things you can do about this warning:
     (save-excursion (next-line)
       (transpose-lines -1))
     (previous-line)
-    (previous-line)
+    (if (> col 0)
+        (previous-line))
     (move-to-column col)))
 
 (defun my-move-line-down() 
