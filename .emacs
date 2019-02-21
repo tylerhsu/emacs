@@ -73,6 +73,7 @@ There are two things you can do about this warning:
             ("\\.ts$" . web-mode)
             ("\\.mjs$" . web-mode)
             ("\\.jsx$" . web-mode)
+            ("\\.tsx$" . web-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
             ("\\.pt$" . web-mode)
             ("\\.yml$" . yaml-mode)

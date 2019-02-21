@@ -12,6 +12,7 @@
 
 (setq mc/cmds-to-run-once
       '(
+        comint-delchar-or-maybe-eof
         comment-dwim
         find-file
         js2-mode-hide-element
