@@ -88,8 +88,6 @@ There are two things you can do about this warning:
       '(("jsx"  . ".*/harvest/.*\\.js[x]?$")))
 
 ;;OTHER MODULES
-;Cedet
-(semantic-mode 1)
 
 ;tabbar (enables top tabs)
 (require 'tabbar)
@@ -104,11 +102,6 @@ There are two things you can do about this warning:
 ; enable expand-region
 (require 'expand-region)
 
-; enable ido-mode
-(setq ido-enable-flex-matching t)
-(setq ido-everywhere t)
-(ido-mode 1)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;DISPLAY;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -120,9 +113,6 @@ There are two things you can do about this warning:
 (if (fboundp 'tool-bar-mode)
     (tool-bar-mode 0))
 (menu-bar-mode 0)
-
-;; show column number
-(setq column-number-mode t)
 
 ;; colors
 (set-background-color "#000000")
@@ -154,10 +144,6 @@ There are two things you can do about this warning:
  'tabbar-separator-face nil
  :height 0.7)
 
-; set default window dimensions
-(if (window-system)
-    (set-frame-size (selected-frame) 81 65))
-
 ; show system name and buffer's full path
 (setq frame-title-format
       '(buffer-file-name "%f" (dired-directory dired-directory "%b")))
@@ -165,12 +151,6 @@ There are two things you can do about this warning:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;CUSTOM FUNCTIONS;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun gnome-fullscreen ()
-  "Active fullscreen mode under X-window"
-       (interactive)
-       (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
-	    		 '(2 "_NET_WM_STATE_FULLSCREEN" 0)))
-
 (defun my-majmodpri-apply ()
   (interactive)
   (majmodpri-apply))
@@ -214,16 +194,6 @@ There are two things you can do about this warning:
   "Visit previous compilation error message and corresponding source code."
   (interactive "p")
   (next-error (- n)))
-
-(defun my-ruby-newline()
-  (interactive)
-  (open-line 2)
-  (next-line 2)
-  (indent-for-tab-command)
-  (delete-backward-char 2)
-  (insert "end")
-  (previous-line 1)
-  (indent-for-tab-command))
 
 (defun tabbar-buffer-groups (buffer)
    "Group buffers into 4 tabbar groups: nxhtml indent, emacs, dired, and user buffers."
@@ -276,10 +246,6 @@ There are two things you can do about this warning:
 ;;;;;;;;;;;;;;;;;;MODE HOOKS;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; Ruby mode hook
-(defun my-ruby-mode-hook ()
-  (define-key ruby-mode-map (kbd "C-<return>") 'my-ruby-newline))
-
 (defun my-actionscript-mode-hook ()
   (setq standard-indent 2)
   (define-key actionscript-mode-map (kbd "C-c g") 'my-as3-getter)
@@ -305,6 +271,8 @@ There are two things you can do about this warning:
   (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
   (setq web-mode-enable-current-element-highlight t)
   (setq web-mode-enable-current-column-highlight t)
+  ; subword mode - stop at camelcase word boundaries
+  (subword-mode 1)
   )
 
 ; Add hooks
@@ -343,15 +311,13 @@ There are two things you can do about this warning:
     (define-key map (kbd "C-c =") 'mc/mark-all-like-this)
     (define-key map (kbd "C-c C-c") 'er/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
+    (define-key map (kbd "C-c C-r") 'recentf-open-files)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'linum-mode)
     (define-key map [f7] 'tabbar-backward-tab)
     (define-key map [f8] 'tabbar-forward-tab)
     ;(define-key map [f9] 'speedbar)
     (define-key map [f12] 'compile)
-
-	(if (eq system-type 'gnu/linux)
-		(define-key map [f11] 'gnome-fullscreen))
     map)
   "my-keys-minor-mode keymap.")
 
@@ -362,10 +328,13 @@ There are two things you can do about this warning:
 
 (my-keys-minor-mode 1)
 
-(define-minor-mode hologram-mode
-  "minor mode to conform to Fernando's code style"
-  :lighter " Hologram"
-  (setq indent-tabs-mode t))
+; ido-mode
+(setq ido-enable-flex-matching t)
+(setq ido-everywhere t)
+(ido-mode 1)
+
+; recent files
+(recentf-mode 1)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;MISCELLANEOUS;;;;;;;;;;;;;;;;;;;;
@@ -379,18 +348,6 @@ There are two things you can do about this warning:
 
 ;; save everything when saving a desktop -- including tramp buffers.
 (setq desktop-files-not-to-save "^$")
-
-;; Mumamo is making emacs 23.3 freak out:
-;; (http://stackoverflow.com/a/5470584)
-(when (and (equal emacs-major-version 23)
-           (equal emacs-minor-version 3))
-  (eval-after-load "bytecomp"
-    '(add-to-list 'byte-compile-not-obsolete-vars
-                  'font-lock-beginning-of-syntax-function))
-  ;; tramp-compat.el clobbers this variable!
-  (eval-after-load "tramp-compat"
-    '(add-to-list 'byte-compile-not-obsolete-vars
-                  'font-lock-beginning-of-syntax-function)))
 
 ;; Put autosave files (ie #foo#) in one place, *not*
 ;; scattered all over the file system!
@@ -436,6 +393,7 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(linum ((t (:inherit default :foreground "brightblack"))))
  '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
  '(speedbar-button-face ((((class color) (background dark)) (:foreground "green3"))))
@@ -450,6 +408,7 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(linum-format "%d ")
  '(package-selected-packages
    (quote
     (json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist js2-mode expand-region dash))))
