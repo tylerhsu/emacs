@@ -275,11 +275,15 @@ There are two things you can do about this warning:
   (subword-mode 1)
   )
 
+(defun my-json-mode-hook ()
+  (setq js-indent-level 2))
+
 ; Add hooks
 (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)
 (add-hook 'actionscript-mode-hook 'my-actionscript-mode-hook)
 (add-hook 'web-mode-hook 'my-web-mode-hook)
 (add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
+(add-hook 'json-mode-hook 'my-json-mode-hook)
 (add-hook 'emacs-startup-hook 'my-emacs-startup-hook)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
