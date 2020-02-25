@@ -102,6 +102,9 @@ There are two things you can do about this warning:
 ; enable expand-region
 (require 'expand-region)
 
+; org-mode Markdown export
+(require 'ox-md)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;DISPLAY;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -273,6 +276,8 @@ There are two things you can do about this warning:
   (setq web-mode-enable-current-column-highlight t)
   ; subword mode - stop at camelcase word boundaries
   (subword-mode 1)
+  ; hideshow mode - code folding
+  (hs-minor-mode 1)
   )
 
 (defun my-json-mode-hook ()
@@ -415,4 +420,4 @@ There are two things you can do about this warning:
  '(linum-format "%d ")
  '(package-selected-packages
    (quote
-    (json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist js2-mode expand-region dash))))
+    (terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist js2-mode expand-region dash))))
