@@ -321,7 +321,7 @@ There are two things you can do about this warning:
     (define-key map (kbd "C-c C-c") 'er/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
     (define-key map (kbd "C-c C-r") 'recentf-open-files)
-    (define-key map (kbd "C-c s") 'isearch-forward-symbol-at-point)
+    (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'linum-mode)
     (define-key map [f7] 'tabbar-backward-tab)
