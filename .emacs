@@ -339,9 +339,27 @@ There are two things you can do about this warning:
 (my-keys-minor-mode 1)
 
 ; ido-mode
-(setq ido-enable-flex-matching t)
-(setq ido-everywhere t)
-(ido-mode 1)
+;; (setq ido-enable-flex-matching t)
+;; (setq ido-everywhere t)
+;; (ido-mode 1)
+
+; helm-mode
+(helm-mode 1)
+(global-set-key (kbd "M-y") 'helm-show-kill-ring)
+(global-set-key (kbd "M-x") 'helm-M-x)
+(global-set-key (kbd "C-x C-f") 'helm-find-files)
+(global-set-key (kbd "C-x b") 'helm-mini)
+(global-set-key (kbd "C-h SPC") 'helm-all-mark-rings)
+(global-set-key (kbd "C-c C-o") 'helm-occur)
+(setq helm-buffer-max-length 50)
+(setq helm-buffers-fuzzy-matching t)
+
+; projectile (with helm-projectile)
+(projectile-global-mode)
+(setq projectile-completion-system 'helm)
+(helm-projectile-on)
+(global-set-key (kbd "C-x p f") 'helm-projectile)
+(global-set-key (kbd "C-x p s") 'helm-projectile-ack)
 
 ; recent files
 (recentf-mode 1)
@@ -403,6 +421,8 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(helm-ff-directory ((t (:foreground "color-25"))))
+ '(helm-ff-dotted-directory ((t (:foreground "brightblack"))))
  '(linum ((t (:inherit default :foreground "brightblack"))))
  '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
@@ -418,7 +438,8 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(helm-recentf-fuzzy-match t)
  '(linum-format "%d ")
  '(package-selected-packages
    (quote
-    (terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist js2-mode expand-region dash))))
+    (projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist js2-mode expand-region dash))))
