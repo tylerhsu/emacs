@@ -83,10 +83,6 @@ There are two things you can do about this warning:
             ("\\.scss$" . css-mode)
             ) auto-mode-alist))
 
-; tell web-mode to use the "jsx" content type for all .js files under the 'harvest' directory
-(setq web-mode-content-types-alist
-      '(("jsx"  . ".*/harvest/.*\\.js[x]?$")))
-
 ;;OTHER MODULES
 
 ;tabbar (enables top tabs)
@@ -263,7 +259,7 @@ There are two things you can do about this warning:
 ;;   (define-key text-mode-map (kbd "TAB") 'tab-to-tab-stop))
 
 (defun my-emacs-startup-hook ()
-  (linum-mode 0))
+  (linum-mode 1))
 
 (defun my-web-mode-hook ()
   (setq web-mode-markup-indent-offset 2)
@@ -278,6 +274,8 @@ There are two things you can do about this warning:
   (subword-mode 1)
   ; hideshow mode - code folding
   (hs-minor-mode 1)
+  ; use // for comments, instead of /*
+  (add-to-list 'web-mode-comment-formats '("javascript" . "//"))
   )
 
 (defun my-json-mode-hook ()
@@ -423,6 +421,7 @@ There are two things you can do about this warning:
  ;; If there is more than one, they won't work right.
  '(helm-ff-directory ((t (:foreground "color-25"))))
  '(helm-ff-dotted-directory ((t (:foreground "brightblack"))))
+ '(helm-selection ((t (:inverse-video t))))
  '(linum ((t (:inherit default :foreground "brightblack"))))
  '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
@@ -438,6 +437,7 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(helm-display-header-line t)
  '(helm-recentf-fuzzy-match t)
  '(linum-format "%d ")
  '(package-selected-packages
