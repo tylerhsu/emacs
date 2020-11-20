@@ -105,9 +105,6 @@ There are two things you can do about this warning:
 ;;;;;;;;;;;;;;;;;DISPLAY;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; default font
-(set-default-font "Inconsolata 12")
-
 ;; remove toolbar, menu bar
 (if (fboundp 'tool-bar-mode)
     (tool-bar-mode 0))
