@@ -83,6 +83,8 @@ There are two things you can do about this warning:
             ("\\.scss$" . css-mode)
             ) auto-mode-alist))
 
+
+
 ;;OTHER MODULES
 
 ;tabbar (enables top tabs)
@@ -94,9 +96,6 @@ There are two things you can do about this warning:
 
 ; enable multiple cursors
 (require 'multiple-cursors)
-
-; enable expand-region
-(require 'expand-region)
 
 ; org-mode Markdown export
 (require 'ox-md)
@@ -261,18 +260,16 @@ There are two things you can do about this warning:
 (defun my-web-mode-hook ()
   (setq web-mode-markup-indent-offset 2)
   (setq web-mode-code-indent-offset 2)
-  (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
+  ;; (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
+  ;; (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
+  ;; (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
+  ;; (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
   (setq web-mode-enable-current-element-highlight t)
   (setq web-mode-enable-current-column-highlight t)
   ; subword mode - stop at camelcase word boundaries
   (subword-mode 1)
   ; hideshow mode - code folding
   (hs-minor-mode 1)
-  ; use // for comments, instead of /*
-  (add-to-list 'web-mode-comment-formats '("javascript" . "//"))
   )
 
 (defun my-json-mode-hook ()
@@ -438,5 +435,10 @@ There are two things you can do about this warning:
  '(helm-recentf-fuzzy-match t)
  '(linum-format "%d ")
  '(package-selected-packages
-   (quote
-    (projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist js2-mode expand-region dash))))
+   '(expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+ '(web-mode-comment-formats
+   '(("java" . "/*")
+     ("javascript" . "//")
+     ("typescript" . "//")
+     ("php" . "/*")
+     ("css" . "/*"))))
