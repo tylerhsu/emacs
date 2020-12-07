@@ -261,7 +261,7 @@ There are two things you can do about this warning:
   (setq web-mode-markup-indent-offset 2)
   (setq web-mode-code-indent-offset 2)
   ;; (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
-  ;; (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
+  (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
   ;; (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
   ;; (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
   (setq web-mode-enable-current-element-highlight t)
@@ -436,6 +436,7 @@ There are two things you can do about this warning:
  '(linum-format "%d ")
  '(package-selected-packages
    '(expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+ '(safe-local-variable-values '((web-mode-content-type . "jsx")))
  '(web-mode-comment-formats
    '(("java" . "/*")
      ("javascript" . "//")
