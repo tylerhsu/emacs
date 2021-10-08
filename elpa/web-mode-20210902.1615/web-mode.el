@@ -1,11 +1,11 @@
 ;;; web-mode.el --- major mode for editing web templates
 ;;; -*- coding: utf-8; lexical-binding: t; -*-
 
-;; Copyright 2011-2020 François-Xavier Bois
+;; Copyright 2011-2021 François-Xavier Bois
 
-;; Version: 17.0.2
-;; Package-Version: 20201107.1152
-;; Package-Commit: 890e837f7ea49f54c02b107377036431cbe7adb6
+;; Version: 17.0.4
+;; Package-Version: 20210902.1615
+;; Package-Commit: 61f057a6baeba6b3595e412ba79b3080dca17dcc
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -26,7 +26,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "17.0.1"
+(defconst web-mode-version "17.0.4"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -972,7 +972,7 @@ Must be used in conjunction with web-mode-enable-block-face."
     ("ctemplate"        . "\\.\\(chtml\\|mustache\\)\\'")
     ("django"           . "\\.\\(djhtml\\|tmpl\\|dtl\\|liquid\\|j2\\|njk\\)\\'")
     ("dust"             . "\\.dust\\'")
-    ("elixir"           . "\\.l?eex\\'")
+    ("elixir"           . "\\.[hl]?eex\\'")
     ("ejs"              . "\\.ejs\\'")
     ("erb"              . "\\.\\(erb\\|rhtml\\|erb\\.html\\)\\'")
     ("expressionengine" . "\\.ee\\'")
@@ -1293,7 +1293,7 @@ Must be used in conjunction with web-mode-enable-block-face."
 (defvar web-mode-engine-token-regexps
   (list
    '("artanis"     . "\"\\|#|\\|;")
-   '("asp"         . "//\\|/\\*\\|\"\\|'")
+   '("asp"         . "//\\|/\\*\\|\"\\|''")
    '("ejs"         . "//\\|/\\*\\|\"\\|'")
    '("erb"         . "\"\\|'\\|#\\|<<[-]?['\"]?\\([[:alnum:]_]+\\)['\"]?")
    '("lsp"         . "\"\\|#|\\|;")
@@ -1316,7 +1316,7 @@ Must be used in conjunction with web-mode-enable-block-face."
    '("closure"          . "{.\\|/\\*\\| //")
    '("clip"             . "</?c:[[:alpha:]-]+")
    '("ctemplate"        . "[$]?{[{~].")
-   '("django"           . "{[#{%]")
+   '("django"           . "{[#{%]\\|^#")
    '("dust"             . "{.")
    '("elixir"           . "<%")
    '("ejs"              . "<%")
@@ -1423,7 +1423,7 @@ shouldn't be moved back.)")
   (regexp-opt
    (append
     (cdr (assoc "elixir" web-mode-extra-keywords))
-    '("do" "end" "case" "bc" "lc" "for" "if" "cond" "with" "unless" "try" "receive" "fn" "defmodule" "defprotocol" "defimpl" "defrecord" "defrecordp" "defstruct" "defdelegate" "defcallback" "defexception" "defoverridable" "defguard" "defgaurdp" "exit" "after" "rescue" "catch" "else" "raise" "throw" "quote" "unquote" "super" "when" "and" "or" "not" "in"))))
+    '("after" "and" "bc" "case" "catch" "cond" "defcallback" "defdelegate" "defexception" "defgaurdp" "defguard" "defimpl" "defmodule" "defoverridable" "defprotocol" "defrecord" "defrecordp" "defstruct" "do" "else" "end" "exit" "fn" "for" "form_for" "if" "in" "lc" "not" "or" "quote" "raise" "receive" "rescue" "super" "throw" "try" "unless" "unquote" "when" "with"))))
 
 
 (defvar web-mode-elixir-constants
@@ -1953,7 +1953,8 @@ shouldn't be moved back.)")
 
 (defvar web-mode-pug-font-lock-keywords
   (list
-   '("#[[:alnum:]-]+" 0 'web-mode-css-selector-face)
+   '("^[ \t]*\\(#?[[:alnum:].-]+\\)" 1 'web-mode-css-selector-face)
+   ;;'("^[ \t]*\\(#[[:alnum:]-]+\\)" 0 'web-mode-css-selector-face)
    '(" \\([@:]?\\sw+[ ]?=\\)" 1 'web-mode-param-name-face)
    ))
 
@@ -2078,8 +2079,8 @@ shouldn't be moved back.)")
 
 (defvar web-mode-django-code-font-lock-keywords
   (list
-   (cons (concat "{%[ ]*\\(" web-mode-django-control-blocks-regexp "\\)[ %]") '(1 'web-mode-block-control-face))
-   '("{%[ ]*\\(end[[:alpha:]]+\\)\\_>" 1 'web-mode-block-control-face) ;#504
+   (cons (concat "\\({%\\|#\\)[ ]*\\(" web-mode-django-control-blocks-regexp "\\)[ %]") '(2 'web-mode-block-control-face))
+   '("\\({%\\|#\\)[ ]*\\(end[[:alpha:]]+\\)\\_>" 2 'web-mode-block-control-face) ;#504
    (cons (concat "\\_<\\(" web-mode-django-keywords "\\)\\_>") '(1 'web-mode-keyword-face))
    (cons (concat "\\_<\\(" web-mode-django-types "\\)\\_>") '(1 'web-mode-type-face))
    '("|[ ]?\\([[:alpha:]_]+\\)\\_>" 1 'web-mode-function-call-face)
@@ -2351,7 +2352,7 @@ shouldn't be moved back.)")
 (defvar web-mode-php-font-lock-keywords
   (list
    (cons (concat "\\_<\\(" web-mode-php-keywords "\\)\\_>") '(0 'web-mode-keyword-face))
-   (cons (concat "(\\_<\\(" web-mode-php-types "\\)\\_>") '(1 'web-mode-type-face))
+   (cons (concat "\\_<\\(" web-mode-php-types "\\)\\_>") '(1 'web-mode-type-face))
    (cons (concat "\\_<\\(" web-mode-php-constants "\\)\\_>") '(0 'web-mode-constant-face))
    '("function[ ]+\\([[:alnum:]_]+\\)" 1 'web-mode-function-name-face)
    '("\\_<\\([[:alnum:]_]+\\)[ ]?(" 1 'web-mode-function-call-face)
@@ -2824,23 +2825,27 @@ another auto-completion with different ac-sources (e.g. ac-php)")
   (when web-mode-trace
     (message "extend-region: font-lock-beg(%S) font-lock-end(%S) web-mode-change-beg(%S) web-mode-change-end(%S) web-mode-skip-fontification(%S)"
              font-lock-beg font-lock-end web-mode-change-beg web-mode-change-end web-mode-skip-fontification))
-  (cond
-   (t
-    (when (or (null web-mode-change-beg) (< font-lock-beg web-mode-change-beg))
-      (when web-mode-trace (message "extend-region: font-lock-beg(%S) < web-mode-change-beg(%S)" font-lock-beg web-mode-change-beg))
-      (setq web-mode-change-beg font-lock-beg))
-    (when (or (null web-mode-change-end) (> font-lock-end web-mode-change-end))
-      (when web-mode-trace (message "extend-region: font-lock-end(%S) > web-mode-change-end(%S)" font-lock-end web-mode-change-end))
-      (setq web-mode-change-end font-lock-end))
-    (let ((region (web-mode-scan web-mode-change-beg web-mode-change-end)))
-      (when region
-        ;;(message "region: %S" region)
-        (setq font-lock-beg (car region)
-              font-lock-end (cdr region))
-        ) ;when
-      ) ;let
-    nil) ;t
-   ))
+  (when (and (string= web-mode-engine "php")
+             (and (>= font-lock-beg 6) (<= font-lock-beg 9))
+             (or (message (buffer-substring-no-properties 1 6)) t)
+             (string= (buffer-substring-no-properties 1 6) "<?php"))
+    (setq font-lock-beg (point-min)
+          font-lock-end (point-max))
+    )
+  (when (or (null web-mode-change-beg) (< font-lock-beg web-mode-change-beg))
+    (when web-mode-trace (message "extend-region: font-lock-beg(%S) < web-mode-change-beg(%S)" font-lock-beg web-mode-change-beg))
+    (setq web-mode-change-beg font-lock-beg))
+  (when (or (null web-mode-change-end) (> font-lock-end web-mode-change-end))
+    (when web-mode-trace (message "extend-region: font-lock-end(%S) > web-mode-change-end(%S)" font-lock-end web-mode-change-end))
+    (setq web-mode-change-end font-lock-end))
+  (let ((region (web-mode-scan web-mode-change-beg web-mode-change-end)))
+    (when region
+      ;;(message "region: %S" region)
+      (setq font-lock-beg (car region)
+            font-lock-end (cdr region))
+      ) ;when
+    ) ;let
+  nil)
 
 (defun web-mode-scan (&optional beg end)
   (when web-mode-trace
@@ -2937,17 +2942,14 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
       (setq char (char-before)))
 
     (cond
-
      ((null char)
       )
-
      ((and (>= (point) 3)
            (web-mode--command-is-self-insert-p)
            (not (member (get-text-property (point) 'part-token) '(comment string)))
            (not (eq (get-text-property (point) 'tag-type) 'comment))
            )
       (setq ctx (web-mode-auto-complete)))
-
      ((and web-mode-enable-auto-opening
            (member this-command '(newline electric-newline-and-maybe-indent newline-and-indent))
            (or (and (not (eobp))
@@ -3051,17 +3053,19 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
         (when (< code-end end)
           (setq end code-end))
         ;; ?? pas de (web-mode-block-tokenize beg end) ?
+        (web-mode-block-tokenize beg end)
         (cons beg end)
         ) ;asp
        (t
         (goto-char pos-beg)
+        ;;(message "pos-beg=%S" pos-beg)
         (when (string= web-mode-engine "php")
           (cond
            ((and (looking-back "\*" (point-min))
                  (looking-at-p "/"))
             (search-backward "/*" code-beg))
            ) ;cond
-          )
+          ) ;when
         (if (web-mode-block-rsb "[;{}(][ ]*\n" code-beg)
             (setq beg (match-end 0))
           (setq beg code-beg))
@@ -3125,7 +3129,7 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
 
     (cond
      ((and (looking-at-p ">") ;#1151
-           (looking-back "--"))
+           (looking-back "--" (point-min)))
       (search-backward "<!--" nil t))
      ((and (bolp) (not (bobp)))
       (backward-char))
@@ -3315,8 +3319,11 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
             (setq closing-string "%}"
                   delim-open "{%[+-]?"
                   delim-close "[-]?%}"))
-           (t
+           ((string= sub2 "{#")
             (setq closing-string "#}"))
+           (t
+            (setq closing-string "EOL"
+                  delim-open "#[#]?"))
            )
           ) ;django
 
@@ -3579,6 +3586,10 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
           (cond
            ((string= sub2 "{!")
             (setq closing-string "!}"))
+           ((string= sub2 "{}")
+            (setq closing-string nil
+                  delim-open nil
+                  delim-close nil))
            (t
             (setq closing-string '("{". "}")
                   delim-open "{[#/:?@><+^]?"
@@ -4376,7 +4387,7 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
 
      ((and (string= web-mode-engine "asp")
            (string= sub2 "<%"))
-      (setq regexp "//\\|/\\*\\|\"\\|'")
+      (setq regexp "//\\|/\\*\\|\"\\|''")
       ) ;asp
 
      ((string= web-mode-engine "aspx")
@@ -4527,7 +4538,7 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
               char (aref match 0))
         (cond
 
-         ((and (string= web-mode-engine "asp") (eq char ?\'))
+         ((and (string= web-mode-engine "asp") (string= match "''"))
           (goto-char token-end))
 
          ((and (string= web-mode-engine "razor") (eq char ?\'))
@@ -5507,7 +5518,7 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
               val-beg nil)
         )
 
-       ((and (= state 6) (member char '(?\s ?\n ?\/)))
+       ((and (= state 6) (member char '(?\s ?\n))) ;#1150
         (setq attrs (+ attrs (web-mode-attr-scan state char name-beg name-end val-beg attr-flags equal-offset)))
         (setq state 1
               attr-flags 0
@@ -5624,9 +5635,17 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
       (if (null val-beg)
           (setq val-end name-end)
         (setq val-end (point))
-        (when (or (null char) (member char '(?\s ?\n ?\> ?\/)))
-          (setq val-end (1- val-end))
+        (cond
+         ((null char)
+          (setq val-end (1- val-end)))
+         ((member char '(?\s ?\n ?\/))
+          (setq val-end (1- val-end)))
+         ((eq char ?\>)
+          (if (logior flags 8)
+              (setq val-end (- val-end 2))
+            (setq val-end (- val-end 1)))
           )
+         )
         ) ;if
       (put-text-property name-beg (1+ name-beg) 'tag-attr-beg flags)
       (put-text-property name-beg (1+ val-end) 'tag-attr t)
@@ -6563,6 +6582,8 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
        ((string= sub2 "{{")
         (setq keywords web-mode-django-expr-font-lock-keywords))
        ((string= sub2 "{%")
+        (setq keywords web-mode-django-code-font-lock-keywords))
+       ((string= sub1 "#")
         (setq keywords web-mode-django-code-font-lock-keywords))
        )) ;django
 
@@ -8356,6 +8377,11 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
           (when debug (message "I140(%S) mason" pos))
           (setq offset 0))
 
+         ((and (string= web-mode-engine "django")
+               (string-match-p "^#" curr-line))
+          (when debug (message "I144(%S) django line statements" pos))
+          (setq offset 0))
+
          ((and (get-text-property pos 'block-beg)
                (or (web-mode-block-is-close pos)
                    (web-mode-block-is-inside pos)))
@@ -8735,6 +8761,8 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
                (not (and (string= language "php")
                          (string-match-p "^->" curr-line)))
                (not (and (string= language "php")
+                         (string-match-p "^?[a-zA-z]*" curr-line)))
+               (not (and (string= language "php")
                          (string-match-p "\\(else[ ]?:\\|if[ ]?([^)]*)[ ]?:\\)" prev-line)))
                (not (string-match-p "^\\(++\\|--\\)" curr-line))
                (not (and is-js
@@ -8754,7 +8782,7 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
                             pos reg-beg is-ternary))
               )
              ((null (cdr (assoc "lineup-ternary" web-mode-indentation-params)))
-              (setq offset (+ (current-indentation) web-mode-code-indent-offset)))
+              (setq offset (current-indentation)))
              (t
               (setq offset (current-column))
               (when (and (member curr-char '(?\+ ?\- ?\& ?\| ?\? ?\:))
@@ -9366,7 +9394,10 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
     (when h
       (setq prev-line (car h))
       (setq prev-indentation (cdr h))
+      ;;(message "line=%S" line)
       (cond
+       ((string-match-p "''" line)
+        (setq out prev-indentation))
        ;; ----------------------------------------------------------------------
        ;; unindent
        ((string-match-p "\\_<\\(\\(end \\(if\\|function\\|class\\|sub\\|with\\)\\)\\|else\\|elseif\\|next\\|loop\\)\\_>" line)
@@ -10767,6 +10798,9 @@ Prompt user if TAG-NAME isn't provided."
          ((looking-at-p ";")
           (setq format ";"
                 prefix ";"))
+         ((looking-at-p "''")
+          (setq format "''"
+                prefix "''"))
          ) ;cond
         (list :beg beg :col col :prefix prefix :type type :format format)))))
 
@@ -11076,6 +11110,8 @@ Prompt user if TAG-NAME isn't provided."
           (setq comment (replace-regexp-in-string "\\(^[ \t]*\\*\\)" "" comment))
           ;;(message "%S" comment)
           )
+         ((string= sub2 "''")
+          (setq comment (replace-regexp-in-string "''" "" comment)))
          ((string= sub2 "//")
           (setq comment (replace-regexp-in-string "^ *//" "" comment)))
          ) ;cond
