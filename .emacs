@@ -83,7 +83,9 @@ There are two things you can do about this warning:
             ("\\.scss$" . css-mode)
             ) auto-mode-alist))
 
-
+(setq web-mode-content-types-alist
+      '(("jsx" . "\\.[jt]sx")
+        ("javascript"  . "[jt]s")))
 
 ;;OTHER MODULES
 
@@ -99,6 +101,12 @@ There are two things you can do about this warning:
 
 ; org-mode Markdown export
 (require 'ox-md)
+
+(require 'flycheck)
+; enable flycheck in all buffers where checking is possible
+(add-hook 'after-init-hook #'global-flycheck-mode)
+; force flycheck to let us use the javascript-eslint checker in web mode
+(flycheck-add-mode 'javascript-eslint 'web-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;DISPLAY;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -237,6 +245,16 @@ There are two things you can do about this warning:
         (set-buffer-modified-p nil)
         t))))
 
+(defun flycheck-use-eslint-from-node-modules ()
+  (let* ((root (locate-dominating-file
+                (or (buffer-file-name) default-directory)
+                "node_modules"))
+         (eslint (and root
+                      (expand-file-name "node_modules/.bin/eslint"
+                                        root))))
+    (when (and eslint (file-executable-p eslint))
+      (setq-local flycheck-javascript-eslint-executable eslint))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;MODE HOOKS;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -260,20 +278,22 @@ There are two things you can do about this warning:
 (defun my-web-mode-hook ()
   (setq web-mode-markup-indent-offset 2)
   (setq web-mode-code-indent-offset 2)
-  ;; (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
-  ;; (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
-  ;; (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
+  (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
+  ;; (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
+  (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
+  (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
   (setq web-mode-enable-current-element-highlight t)
   (setq web-mode-enable-current-column-highlight t)
   ; subword mode - stop at camelcase word boundaries
   (subword-mode 1)
   ; hideshow mode - code folding
-  (hs-minor-mode 1)
-  )
+  (hs-minor-mode 1))
 
 (defun my-json-mode-hook ()
   (setq js-indent-level 2))
+
+(defun my-flycheck-mode-hook ()
+  (flycheck-use-eslint-from-node-modules))
 
 ; Add hooks
 (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)
@@ -282,6 +302,7 @@ There are two things you can do about this warning:
 (add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
 (add-hook 'json-mode-hook 'my-json-mode-hook)
 (add-hook 'emacs-startup-hook 'my-emacs-startup-hook)
+(add-hook 'flycheck-mode-hook 'my-flycheck-mode-hook)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;MINOR MODES;;;;;;;;;;;;;;;;;;;;;;;
@@ -436,7 +457,9 @@ There are two things you can do about this warning:
  '(linum-format "%d ")
  '(package-selected-packages
    '(expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
- '(safe-local-variable-values '((web-mode-content-type . "jsx")))
+ '(safe-local-variable-values
+   '((flycheck-checker . eslint)
+     (web-mode-content-type . "jsx")))
  '(web-mode-comment-formats
    '(("java" . "/*")
      ("javascript" . "//")
