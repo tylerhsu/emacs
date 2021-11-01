@@ -108,6 +108,17 @@ There are two things you can do about this warning:
 ; force flycheck to let us use the javascript-eslint checker in web mode
 (flycheck-add-mode 'javascript-eslint 'web-mode)
 
+(defun setup-tide-mode ()
+  (interactive)
+  (tide-setup)
+  (eldoc-mode +1)
+  (tide-hl-identifier-mode +1)
+  ;; company is an optional dependency. You have to
+  ;; install it separately via package-install
+  ;; `M-x package-install [ret] company`
+  ;; (company-mode +1)
+  )
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;DISPLAY;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -284,6 +295,7 @@ There are two things you can do about this warning:
   (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
   (setq web-mode-enable-current-element-highlight t)
   (setq web-mode-enable-current-column-highlight t)
+  (setup-tide-mode)
   ; subword mode - stop at camelcase word boundaries
   (subword-mode 1)
   ; hideshow mode - code folding
@@ -444,6 +456,7 @@ There are two things you can do about this warning:
  '(speedbar-directory-face ((default nil) (nil (:foreground "#4400cc" :height 0.8))))
  '(speedbar-file-face ((default nil) (nil (:foreground "light blue" :height 0.8))))
  '(speedbar-selected-face ((default nil) (nil (:foreground "red" :underline t :height 0.8))))
+ '(tide-hl-identifier-face ((t (:background "blue"))))
  '(web-mode-html-tag-bracket-face ((t (:foreground "brightblack")))))
 
 (put 'downcase-region 'disabled nil)
@@ -456,7 +469,7 @@ There are two things you can do about this warning:
  '(helm-recentf-fuzzy-match t)
  '(linum-format "%d ")
  '(package-selected-packages
-   '(expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(safe-local-variable-values
    '((flycheck-checker . eslint)
      (web-mode-content-type . "jsx")))
