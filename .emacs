@@ -28,13 +28,11 @@ There are two things you can do about this warning:
   (when (< emacs-major-version 24)
     ;; For important compatibility libraries like cl-lib
     (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
+
 (package-initialize)
 
 ; Automatically revert buffers when they change on disk
 (global-auto-revert-mode 1)
-
-; Set default tab width
-(setq default-tab-width 4)
 
 ;;MAJOR MODES
 
@@ -469,10 +467,14 @@ There are two things you can do about this warning:
  '(helm-recentf-fuzzy-match t)
  '(linum-format "%d ")
  '(package-selected-packages
-   '(tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(go-mode tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(safe-local-variable-values
-   '((flycheck-checker . eslint)
+   '((require-final-newline nil)
+     (mode-require-final-newline nil)
+     (content-type . "jsx")
+     (flycheck-checker . eslint)
      (web-mode-content-type . "jsx")))
+ '(tab-width 4)
  '(web-mode-comment-formats
    '(("java" . "/*")
      ("javascript" . "//")
