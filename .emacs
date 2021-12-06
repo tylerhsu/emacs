@@ -31,6 +31,9 @@ There are two things you can do about this warning:
 
 (package-initialize)
 
+(eval-when-compile
+  (require 'use-package))
+
 ; Automatically revert buffers when they change on disk
 (global-auto-revert-mode 1)
 
@@ -48,9 +51,6 @@ There are two things you can do about this warning:
 ; actionscript
 (autoload 'actionscript-mode "actionscript-mode" nil t)
 
-; web mode
-(autoload 'web-mode "web-mode" nil t)
-
 ; yaml mode
 (autoload 'yaml-mode "yaml-mode" nil t)
 
@@ -67,11 +67,6 @@ There are two things you can do about this warning:
             ("\\.html.erb$" . web-mode)
             ("\\.djhtml$" . web-mode)
             ("\\.mustache$" . web-mode)
-            ("\\.js$" . web-mode)
-            ("\\.ts$" . web-mode)
-            ("\\.mjs$" . web-mode)
-            ("\\.jsx$" . web-mode)
-            ("\\.tsx$" . web-mode)
             ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
             ("\\.pt$" . web-mode)
             ("\\.yml$" . yaml-mode)
@@ -81,9 +76,45 @@ There are two things you can do about this warning:
             ("\\.scss$" . css-mode)
             ) auto-mode-alist))
 
-(setq web-mode-content-types-alist
-      '(("jsx" . "\\.[jt]sx")
-        ("javascript"  . "[jt]s")))
+(use-package web-mode
+  :ensure t
+  :mode ("\\.tsx?\\'" . web-mode)
+  :hook (web-mode . (lambda()
+                      (setq web-mode-markup-indent-offset 2)
+                      (setq web-mode-code-indent-offset 2)
+                      (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
+                      (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
+                      (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
+                      (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
+                      (setq web-mode-enable-current-element-highlight t)
+                      (setq web-mode-enable-current-column-highlight t)
+                      (setup-tide-mode)
+                                        ; subword mode - stop at camelcase word boundaries
+                      (subword-mode 1)
+                                        ; hideshow mode - code folding
+                      (hs-minor-mode 1)
+                      ))
+  :config
+  (setq web-mode-content-types-alist '(("jsx" . "\\.[jt]sx")
+                                       ("javascript"  . "[jt]s"))))
+
+(use-package js-jsx-mode
+  :mode (("\\.mjs\\'" . js-jsx-mode)
+         ("\\.jsx?\\'" . js-jsx-mode))
+  :hook (js-jsx-mode . (lambda()
+                         (subword-mode)
+                         (setup-tide-mode)
+                         )))
+
+(use-package flycheck
+  :ensure t
+  :hook (flycheck-mode . (lambda ()
+                           (flycheck-use-eslint-from-node-modules)))
+  :config
+  ; enable flycheck in all buffers where checking is possible
+  (add-hook 'after-init-hook #'global-flycheck-mode)
+  ; force flycheck to let us use the javascript-eslint checker in web mode
+  (flycheck-add-mode 'javascript-eslint 'web-mode))
 
 ;;OTHER MODULES
 
@@ -99,12 +130,6 @@ There are two things you can do about this warning:
 
 ; org-mode Markdown export
 (require 'ox-md)
-
-(require 'flycheck)
-; enable flycheck in all buffers where checking is possible
-(add-hook 'after-init-hook #'global-flycheck-mode)
-; force flycheck to let us use the javascript-eslint checker in web mode
-(flycheck-add-mode 'javascript-eslint 'web-mode)
 
 (defun setup-tide-mode ()
   (interactive)
@@ -284,35 +309,11 @@ There are two things you can do about this warning:
 (defun my-emacs-startup-hook ()
   (linum-mode 1))
 
-(defun my-web-mode-hook ()
-  (setq web-mode-markup-indent-offset 2)
-  (setq web-mode-code-indent-offset 2)
-  (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
-  (setq web-mode-enable-current-element-highlight t)
-  (setq web-mode-enable-current-column-highlight t)
-  (setup-tide-mode)
-  ; subword mode - stop at camelcase word boundaries
-  (subword-mode 1)
-  ; hideshow mode - code folding
-  (hs-minor-mode 1))
-
-(defun my-json-mode-hook ()
-  (setq js-indent-level 2))
-
-(defun my-flycheck-mode-hook ()
-  (flycheck-use-eslint-from-node-modules))
-
 ; Add hooks
 (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)
 (add-hook 'actionscript-mode-hook 'my-actionscript-mode-hook)
-(add-hook 'web-mode-hook 'my-web-mode-hook)
 (add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
-(add-hook 'json-mode-hook 'my-json-mode-hook)
 (add-hook 'emacs-startup-hook 'my-emacs-startup-hook)
-(add-hook 'flycheck-mode-hook 'my-flycheck-mode-hook)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;MINOR MODES;;;;;;;;;;;;;;;;;;;;;;;
@@ -465,16 +466,17 @@ There are two things you can do about this warning:
  ;; If there is more than one, they won't work right.
  '(helm-display-header-line t)
  '(helm-recentf-fuzzy-match t)
+ '(js-indent-level 2)
  '(linum-format "%d ")
  '(package-selected-packages
-   '(go-mode tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(safe-local-variable-values
    '((require-final-newline nil)
      (mode-require-final-newline nil)
      (content-type . "jsx")
      (flycheck-checker . eslint)
      (web-mode-content-type . "jsx")))
- '(tab-width 4)
+ '(typescript-indent-level 2)
  '(web-mode-comment-formats
    '(("java" . "/*")
      ("javascript" . "//")
