@@ -1,16 +1,11 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;EXTERNAL MODULES;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; set load path depending on OS.
-(if (eq system-type 'windows-nt)
-    (defvar elisp-dir
-      (concat (getenv "emacs_dir") "/lisp/"))
-  (defvar elisp-dir
-    (concat "~/.emacs.d/lisp")))
+;;; .emacs --- Tyler's emacs config
 
-(add-to-list 'load-path elisp-dir)
+;;; Commentary:
+;; Tyler's Emacs config
 
-; load MELPA packages
+;;; Code:
+
+;; load MELPA packages
 (require 'package)
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                     (not (gnutls-available-p))))
@@ -29,52 +24,8 @@ There are two things you can do about this warning:
     ;; For important compatibility libraries like cl-lib
     (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
 
-(package-initialize)
-
-(eval-when-compile
-  (require 'use-package))
-
-; Automatically revert buffers when they change on disk
-(global-auto-revert-mode 1)
-
-;;MAJOR MODES
-
-; Mustache
-(autoload 'mustache-mode "mustache-mode" nil t)
-
-; VB6
-(autoload 'visual-basic-mode "visual-basic-mode" nil t)
-
-; PHP
-(autoload 'php-mode "php-mode" "Major mode for editing php code." t)
-
-; actionscript
-(autoload 'actionscript-mode "actionscript-mode" nil t)
-
-; yaml mode
-(autoload 'yaml-mode "yaml-mode" nil t)
-
-; jade mode
-(autoload 'jade-mode "jade-mode" nil t)
-
-; set major mode file associations (in addition to defaults)
-(setq auto-mode-alist
-  (append '(("\\.php$" . php-mode)
-            ("\\.inc$" . php-mode)
-            ("\\.js.erb$" . web-mode)
-            ("\\.as$" . actionscript-mode)
-            ("\\.html$" . web-mode)
-            ("\\.html.erb$" . web-mode)
-            ("\\.djhtml$" . web-mode)
-            ("\\.mustache$" . web-mode)
-            ("\\.\\(frm\\|bas\\|cls\\)$" . visual-basic-mode)
-            ("\\.pt$" . web-mode)
-            ("\\.yml$" . yaml-mode)
-            ("\\.jade$" . jade-mode)
-            ("\\.pug$" . jade-mode)
-            ("\\.css$" . css-mode)
-            ("\\.scss$" . css-mode)
-            ) auto-mode-alist))
+(use-package yaml-mode
+  :ensure t)
 
 (use-package web-mode
   :ensure t
@@ -89,14 +40,29 @@ There are two things you can do about this warning:
                       (setq web-mode-enable-current-element-highlight t)
                       (setq web-mode-enable-current-column-highlight t)
                       (setup-tide-mode)
-                                        ; subword mode - stop at camelcase word boundaries
-                      (subword-mode 1)
-                                        ; hideshow mode - code folding
-                      (hs-minor-mode 1)
+                      ;; subword mode - stop at camelcase word boundaries
+                      (subword-mode)
+                      ;; hideshow mode - code folding
+                      (hs-minor-mode)
                       ))
   :config
   (setq web-mode-content-types-alist '(("jsx" . "\\.[jt]sx")
                                        ("javascript"  . "[jt]s"))))
+
+(use-package tide
+  :ensure t
+  :init
+  (defun setup-tide-mode ()
+    (interactive)
+    (eldoc-mode +1)
+    (tide-setup)
+    (tide-hl-identifier-mode +1)
+  ))
+
+(use-package company
+  :ensure t
+  :bind ("M-/" . company-complete)
+  :hook (after-init . global-company-mode))
 
 (use-package js-jsx-mode
   :mode (("\\.mjs\\'" . js-jsx-mode)
@@ -116,35 +82,32 @@ There are two things you can do about this warning:
   ; force flycheck to let us use the javascript-eslint checker in web mode
   (flycheck-add-mode 'javascript-eslint 'web-mode))
 
-;;OTHER MODULES
+(use-package multiple-cursors
+  :ensure t)
 
-;tabbar (enables top tabs)
-(require 'tabbar)
+(use-package helm
+  :ensure t
+  :config
+  (helm-mode 1)
+  (setq helm-buffer-max-length 50)
+  (setq helm-buffers-fuzzy-matching t)
+  :bind (("M-y" . helm-show-kill-ring)
+         ("M-x" . helm-M-x)
+         ("C-x C-f" . helm-find-files)
+         ("C-x b" . helm-mini)
+         ("C-h SPC" . helm-all-mark-rings)
+         ("C-c C-o" . helm-occur)))
 
-;uniquify buffer names by appending part of the full path after them
-(require 'uniquify)
-(setq uniquify-buffer-name-style 'post-forward-angle-brackets)
+(use-package projectile
+  :ensure t
+  :config
+  (projectile-mode)
+  (setq projectile-completion-system 'helm)
+  (helm-projectile-on)
+  :bind (("C-x p f" . helm-projectile)
+         ("C-x p s" . helm-projectile-ack)))
 
-; enable multiple cursors
-(require 'multiple-cursors)
-
-; org-mode Markdown export
-(require 'ox-md)
-
-(defun setup-tide-mode ()
-  (interactive)
-  (tide-setup)
-  (eldoc-mode +1)
-  (tide-hl-identifier-mode +1)
-  ;; company is an optional dependency. You have to
-  ;; install it separately via package-install
-  ;; `M-x package-install [ret] company`
-  ;; (company-mode +1)
-  )
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;DISPLAY;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Display
 
 ;; remove toolbar, menu bar
 (if (fboundp 'tool-bar-mode)
@@ -156,130 +119,40 @@ There are two things you can do about this warning:
 (set-cursor-color "#ff0000")
 (set-foreground-color "#ffffff")
 
-;; display buffer tab bar
-(tabbar-mode)
-(setq tabbar-buffer-groups-function 'tabbar-buffer-groups)
+;; Custom functions
 
-;; tab bar display settings
-(set-face-attribute
- 'tabbar-default-face nil
- :background "gray20")
-(set-face-attribute
- 'tabbar-unselected-face nil
- :background "gray30"
- :foreground "gray"
- :box nil)
-(set-face-attribute
- 'tabbar-selected-face nil
- :background "black"
- :foreground "yellow"
- :box nil)
-(set-face-attribute
- 'tabbar-button-face nil
- :box '(:line-width 1 :color "gray72" :style released-button))
-(set-face-attribute
- 'tabbar-separator-face nil
- :height 0.7)
-
-; show system name and buffer's full path
-(setq frame-title-format
-      '(buffer-file-name "%f" (dired-directory dired-directory "%b")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;CUSTOM FUNCTIONS;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun my-majmodpri-apply ()
-  (interactive)
-  (majmodpri-apply))
-
-(defun my-move-line-up() 
+(defun my-move-line-up()
   "Move the current line up one."
   (interactive)
   (let ((col (current-column)))
-    (save-excursion (next-line)
+    (save-excursion (forward-line)
       (transpose-lines -1))
-    (previous-line)
+    (forward-line -1)
     (if (> col 0)
-        (previous-line))
+        (forward-line -1))
     (move-to-column col)))
 
-(defun my-move-line-down() 
+(defun my-move-line-down()
   "Move the current line down one."
   (interactive)
   (let ((col (current-column)))
-    (save-excursion (next-line)
+    (save-excursion (forward-line)
       (transpose-lines 1))
-    (next-line)
+    (forward-line)
     (move-to-column col)))
 
 (defun duplicate-line()
+  "Duplicate the line at point."
   (interactive)
   (move-beginning-of-line 1)
   (kill-line)
   (yank)
   (open-line 1)
-  (next-line 1)
+  (forward-line 1)
   (yank))
 
-(defun my-kill-line()
-  (interactive)
-  (move-beginning-of-line 1)
-  (kill-line)
-  (indent-for-tab-command))
-
-(defun previous-error (n)
-  "Visit previous compilation error message and corresponding source code."
-  (interactive "p")
-  (next-error (- n)))
-
-(defun tabbar-buffer-groups (buffer)
-   "Group buffers into 4 tabbar groups: nxhtml indent, emacs, dired, and user buffers."
-   (with-current-buffer (get-buffer buffer)
-     (cond
-      ((string-match-p "^.+\.html-template-indent-buffer$" (buffer-name))
-       '("nxhtml Indent Buffer"))
-      ((string-equal "*" (substring (buffer-name) 0 1))
-       '("Emacs Buffer"))
-      ((eq major-mode 'dired-mode)
-       '("Dired"))
-      (t
-       '("User Buffer"))
-      )))
-
-;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
-(defun rename-file-and-buffer (new-name)
-  "Renames both current buffer and file it's visiting to NEW-NAME."
-  (interactive "sNew name: ")
-  (let ((name (buffer-name))
-    (filename (buffer-file-name)))
-    (if (not filename)
-    (message "Buffer '%s' is not visiting a file!" name)
-      (if (get-buffer new-name)
-      (message "A buffer named '%s' already exists!" new-name)
-    (progn
-      (rename-file name new-name 1)
-      (rename-buffer new-name)
-      (set-visited-file-name new-name)
-      (set-buffer-modified-p nil))))))
-
-(defun move-buffer-file (dir)
-  "Moves both current buffer and file it's visiting to DIR." (interactive "DNew directory: ")
-  (let* ((name (buffer-name))
-    (filename (buffer-file-name))
-    (dir
-    (if (string-match dir "\\(?:/\\|\\\\)$")
-      (substring dir 0 -1) dir))
-      (newname (concat dir "/" name)))
-    (if (not filename)
-      (message "Buffer '%s' is not visiting a file!" name)
-      (progn
-        (copy-file filename newname 1)
-        (delete-file filename)
-        (set-visited-file-name newname)
-        (set-buffer-modified-p nil)
-        t))))
-
 (defun flycheck-use-eslint-from-node-modules ()
+  "Set the flycheck eslint executable to the one installed in the project's node_modules dir."
   (let* ((root (locate-dominating-file
                 (or (buffer-file-name) default-directory)
                 "node_modules"))
@@ -289,37 +162,10 @@ There are two things you can do about this warning:
     (when (and eslint (file-executable-p eslint))
       (setq-local flycheck-javascript-eslint-executable eslint))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;MODE HOOKS;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun my-actionscript-mode-hook ()
-  (setq standard-indent 2)
-  (define-key actionscript-mode-map (kbd "C-c g") 'my-as3-getter)
-  (define-key actionscript-mode-map (kbd "C-c s") 'my-as3-setter)
-  (define-key actionscript-mode-map (kbd "C-c x") 'my-as3-getter-setter)
-  (define-key actionscript-mode-map (kbd "C-c f") 'my-as3-import-graphical-asset)
-  (define-key actionscript-mode-map (kbd "C-c a") 'as3-code-assets))
+;; Minor modes
 
-;; (defun my-text-mode-hook ()
-;;   ;; Set 4-space indentation
-;;   (setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80))
-;;   (define-key text-mode-map (kbd "TAB") 'tab-to-tab-stop))
-
-(defun my-emacs-startup-hook ()
-  (linum-mode 1))
-
-; Add hooks
-(add-hook 'ruby-mode-hook 'my-ruby-mode-hook)
-(add-hook 'actionscript-mode-hook 'my-actionscript-mode-hook)
-(add-hook 'snippet-mode-hook 'my-snippet-mode-hook)
-(add-hook 'emacs-startup-hook 'my-emacs-startup-hook)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;MINOR MODES;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; my key bindings
+;; my key bindings
 (defvar my-keys-minor-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-z") 'undo)
@@ -327,15 +173,7 @@ There are two things you can do about this warning:
     (define-key map (kbd "C-c n") 'my-move-line-down)
     (define-key map (kbd "C-c j") 'duplicate-line)
     (define-key map (kbd "C-c ;") 'comment-or-uncomment-region)
-    (define-key map (kbd "C-c ]") 'tabbar-forward-tab)
-    (define-key map (kbd "C-c [") 'tabbar-backward-tab)
-    (define-key map (kbd "C-c }") 'tabbar-forward-group)
-    (define-key map (kbd "C-c {") 'tabbar-backward-group)
     (define-key map (kbd "C-l") 'goto-line)
-    (define-key map (kbd "C-c r") 'rename-file-and-buffer)
-    (define-key map (kbd "C-c m") 'move-buffer-file)
-    (define-key map (kbd "C-c , f") 'semantic-ia-fast-jump)
-    (define-key map (kbd "C-c k") 'my-kill-line)
     (define-key map (kbd "<up>") 'scroll-down-line)
     (define-key map (kbd "<down>") 'scroll-up-line)
     (define-key map (kbd "C-c C-n") 'mc/mark-more-like-this-extended)
@@ -344,16 +182,12 @@ There are two things you can do about this warning:
     (define-key map (kbd "C-c =") 'mc/mark-all-like-this)
     (define-key map (kbd "C-c C-c") 'er/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
-    (define-key map (kbd "C-c C-r") 'recentf-open-files)
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'linum-mode)
-    (define-key map [f7] 'tabbar-backward-tab)
-    (define-key map [f8] 'tabbar-forward-tab)
-    ;(define-key map [f9] 'speedbar)
     (define-key map [f12] 'compile)
     map)
-  "my-keys-minor-mode keymap.")
+  "My-keys-minor-mode keymap.")
 
 (define-minor-mode my-keys-minor-mode
   "A minor mode so that my key settings override annoying major modes."
@@ -362,44 +196,10 @@ There are two things you can do about this warning:
 
 (my-keys-minor-mode 1)
 
-; ido-mode
-;; (setq ido-enable-flex-matching t)
-;; (setq ido-everywhere t)
-;; (ido-mode 1)
+;; Miscellaneous
 
-; helm-mode
-(helm-mode 1)
-(global-set-key (kbd "M-y") 'helm-show-kill-ring)
-(global-set-key (kbd "M-x") 'helm-M-x)
-(global-set-key (kbd "C-x C-f") 'helm-find-files)
-(global-set-key (kbd "C-x b") 'helm-mini)
-(global-set-key (kbd "C-h SPC") 'helm-all-mark-rings)
-(global-set-key (kbd "C-c C-o") 'helm-occur)
-(setq helm-buffer-max-length 50)
-(setq helm-buffers-fuzzy-matching t)
-
-; projectile (with helm-projectile)
-(projectile-global-mode)
-(setq projectile-completion-system 'helm)
-(helm-projectile-on)
-(global-set-key (kbd "C-x p f") 'helm-projectile)
-(global-set-key (kbd "C-x p s") 'helm-projectile-ack)
-
-; recent files
-(recentf-mode 1)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;MISCELLANEOUS;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; TRAMP default method
-(require 'tramp)
-(setq tramp-default-method "ssh")
-(add-to-list 'tramp-default-proxies-alist
-             '("\\." "\\`mp-janitor\\'" "/ssh:%h:"))
-
-;; save everything when saving a desktop -- including tramp buffers.
-(setq desktop-files-not-to-save "^$")
+;; Automatically revert buffers when they change on disk
+(global-auto-revert-mode 1)
 
 ;; Put autosave files (ie #foo#) in one place, *not*
 ;; scattered all over the file system!
@@ -408,22 +208,6 @@ There are two things you can do about this warning:
       (concat (getenv "emacs_dir") "/emacs-autosaves/"))
   (defvar autosave-dir
     (concat "~/.emacs-autosaves/")))
-
-(defun auto-save-file-name-p (filename)
-  (string-match "^#.*#$" (file-name-nondirectory filename)))
-
-(defun make-auto-save-file-name ()
-  (concat autosave-dir
-   (if buffer-file-name
-      (concat "#" (file-name-nondirectory buffer-file-name) "#")
-    (expand-file-name
-     (concat "#%" (buffer-name) "#")))))
-
-; make text-mode the default major mode
-(setq default-major-mode 'text-mode)
-
-;;turn on auto-fill mode by default       
-;(setq-default auto-fill-function 'do-auto-fill)
 
 ;; typing replaces selection
 (delete-selection-mode 1)
@@ -464,6 +248,7 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(company-idle-delay nil)
  '(helm-display-header-line t)
  '(helm-recentf-fuzzy-match t)
  '(js-indent-level 2)
