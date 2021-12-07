@@ -9,3 +9,5 @@ bookmarks
 projectile.cache
 projectile-bookmarks.eld
 url
+.cache
+.lsp-session-v1

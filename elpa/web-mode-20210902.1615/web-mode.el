@@ -8782,7 +8782,7 @@ Also return non-nil if it is the command `self-insert-command' is remapped to."
                             pos reg-beg is-ternary))
               )
              ((null (cdr (assoc "lineup-ternary" web-mode-indentation-params)))
-              (setq offset (current-indentation)))
+              (setq offset (+ (current-indentation) web-mode-code-indent-offset)))
              (t
               (setq offset (current-column))
               (when (and (member curr-char '(?\+ ?\- ?\& ?\| ?\? ?\:))
