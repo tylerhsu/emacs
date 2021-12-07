@@ -5,6 +5,8 @@
 
 ;;; Code:
 
+(setq byte-compile-warnings '(cl-functions))
+
 ;; load MELPA packages
 (require 'package)
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
@@ -25,11 +27,14 @@ There are two things you can do about this warning:
     (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
 
 (use-package yaml-mode
-  :ensure t)
+  :ensure t
+  :commands yaml-mode)
 
 (use-package web-mode
   :ensure t
-  :mode ("\\.tsx?\\'" . web-mode)
+  :init
+  (define-derived-mode typescript-tsx-mode web-mode "Typescript[TSX]")
+  :mode ("\\.tsx?\\'" . typescript-tsx-mode)
   :hook (web-mode . (lambda()
                       (setq web-mode-markup-indent-offset 2)
                       (setq web-mode-code-indent-offset 2)
@@ -39,7 +44,6 @@ There are two things you can do about this warning:
                       (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
                       (setq web-mode-enable-current-element-highlight t)
                       (setq web-mode-enable-current-column-highlight t)
-                      (setup-tide-mode)
                       ;; subword mode - stop at camelcase word boundaries
                       (subword-mode)
                       ;; hideshow mode - code folding
@@ -47,29 +51,32 @@ There are two things you can do about this warning:
                       ))
   :config
   (setq web-mode-content-types-alist '(("jsx" . "\\.[jt]sx")
-                                       ("javascript"  . "[jt]s"))))
+                                       ("javascript"  . "[jt]s")))
+  :commands web-mode)
 
-(use-package tide
+(use-package lsp-mode
   :ensure t
   :init
-  (defun setup-tide-mode ()
-    (interactive)
-    (eldoc-mode +1)
-    (tide-setup)
-    (tide-hl-identifier-mode +1)
-  ))
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  (setq lsp-keymap-prefix "C-c l")
+  :hook ((typescript-tsx-mode . lsp)
+         (js-jsx-mode . lsp))
+  :commands lsp)
+
+(use-package lsp-ui
+  :ensure t
+  :commands lsp-ui-mode)
 
 (use-package company
   :ensure t
   :bind ("M-/" . company-complete)
-  :hook (after-init . global-company-mode))
+  :hook (lsp-mode . company-mode))
 
 (use-package js-jsx-mode
   :mode (("\\.mjs\\'" . js-jsx-mode)
          ("\\.jsx?\\'" . js-jsx-mode))
   :hook (js-jsx-mode . (lambda()
                          (subword-mode)
-                         (setup-tide-mode)
                          )))
 
 (use-package flycheck
@@ -102,7 +109,11 @@ There are two things you can do about this warning:
   :ensure t
   :config
   (projectile-mode)
-  (setq projectile-completion-system 'helm)
+  (setq projectile-completion-system 'helm))
+
+(use-package helm-projectile
+  :ensure t
+  :config
   (helm-projectile-on)
   :bind (("C-x p f" . helm-projectile)
          ("C-x p s" . helm-projectile-ack)))
@@ -229,10 +240,14 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(header-line ((t (:background "color-235" :inverse-video nil :underline t))))
  '(helm-ff-directory ((t (:foreground "color-25"))))
  '(helm-ff-dotted-directory ((t (:foreground "brightblack"))))
  '(helm-selection ((t (:inverse-video t))))
  '(linum ((t (:inherit default :foreground "brightblack"))))
+ '(lsp-headerline-breadcrumb-path-face ((t nil)))
+ '(lsp-headerline-breadcrumb-project-prefix-face ((t nil)))
+ '(lsp-headerline-breadcrumb-symbols-face ((t (:inherit font-lock-function-name-face :weight normal))))
  '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
  '(speedbar-button-face ((((class color) (background dark)) (:foreground "green3"))))
@@ -248,11 +263,14 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(company-idle-delay nil)
+ '(company-idle-delay 0)
+ '(helm-boring-buffer-regexp-list
+   '("\\` " "\\`\\*helm" "\\`\\*Echo Area" "\\`\\*Minibuf" "\\`\\*.+\\*"))
  '(helm-display-header-line t)
  '(helm-recentf-fuzzy-match t)
  '(js-indent-level 2)
  '(linum-format "%d ")
+ '(lsp-enable-symbol-highlighting nil)
  '(package-selected-packages
    '(use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(safe-local-variable-values
