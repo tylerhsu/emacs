@@ -120,6 +120,9 @@ There are two things you can do about this warning:
   :ensure t
   :mode "Dockerfile\\'")
 
+(use-package expand-region
+  :ensure t)
+
 ;; Display
 
 ;; remove toolbar, menu bar
@@ -262,6 +265,7 @@ There are two things you can do about this warning:
  '(js-indent-level 2)
  '(linum-format "%d ")
  '(lsp-enable-symbol-highlighting nil)
+ '(lsp-ui-sideline-show-diagnostics nil)
  '(package-selected-packages
    '(use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(safe-local-variable-values
