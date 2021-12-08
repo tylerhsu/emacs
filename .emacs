@@ -54,13 +54,17 @@ There are two things you can do about this warning:
                                        ("javascript"  . "[jt]s")))
   :commands web-mode)
 
+;; Installed servers (M-x lsp-install-server RET <server> RET)
+;; ts-ls, eslint,
 (use-package lsp-mode
   :ensure t
   :init
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   (setq lsp-keymap-prefix "C-c l")
-  :hook ((typescript-tsx-mode . lsp)
-         (js-jsx-mode . lsp))
+  :hook ((typescript-mode . lsp)
+         (typescript-tsx-mode . lsp)
+         (js-mode . lsp)
+         (dockerfile-mode . lsp))
   :bind (("M-." . lsp-ui-peek-find-definitions)
          ("M-?" . lsp-ui-peek-find-references))
   :commands lsp)
@@ -74,22 +78,11 @@ There are two things you can do about this warning:
   :bind ("M-/" . company-complete)
   :hook (lsp-mode . company-mode))
 
-(use-package js-jsx-mode
-  :mode (("\\.mjs\\'" . js-jsx-mode)
-         ("\\.jsx?\\'" . js-jsx-mode))
-  :hook (js-jsx-mode . (lambda()
-                         (subword-mode)
-                         )))
-
 (use-package flycheck
   :ensure t
-  :hook (flycheck-mode . (lambda ()
-                           (flycheck-use-eslint-from-node-modules)))
   :config
   ; enable flycheck in all buffers where checking is possible
-  (add-hook 'after-init-hook #'global-flycheck-mode)
-  ; force flycheck to let us use the javascript-eslint checker in web mode
-  (flycheck-add-mode 'javascript-eslint 'web-mode))
+  (add-hook 'after-init-hook #'global-flycheck-mode))
 
 (use-package multiple-cursors
   :ensure t)
@@ -119,6 +112,10 @@ There are two things you can do about this warning:
   (helm-projectile-on)
   :bind (("C-x p f" . helm-projectile)
          ("C-x p s" . helm-projectile-ack)))
+
+(use-package dockerfile-mode
+  :ensure t
+  :mode "Dockerfile\\'")
 
 ;; Display
 
@@ -163,18 +160,6 @@ There are two things you can do about this warning:
   (open-line 1)
   (forward-line 1)
   (yank))
-
-(defun flycheck-use-eslint-from-node-modules ()
-  "Set the flycheck eslint executable to the one installed in the project's node_modules dir."
-  (let* ((root (locate-dominating-file
-                (or (buffer-file-name) default-directory)
-                "node_modules"))
-         (eslint (and root
-                      (expand-file-name "node_modules/.bin/eslint"
-                                        root))))
-    (when (and eslint (file-executable-p eslint))
-      (setq-local flycheck-javascript-eslint-executable eslint))))
-
 
 ;; Minor modes
 
@@ -279,7 +264,6 @@ There are two things you can do about this warning:
    '((require-final-newline nil)
      (mode-require-final-newline nil)
      (content-type . "jsx")
-     (flycheck-checker . eslint)
      (web-mode-content-type . "jsx")))
  '(typescript-indent-level 2)
  '(web-mode-comment-formats
