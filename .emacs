@@ -61,6 +61,8 @@ There are two things you can do about this warning:
   (setq lsp-keymap-prefix "C-c l")
   :hook ((typescript-tsx-mode . lsp)
          (js-jsx-mode . lsp))
+  :bind (("M-." . lsp-ui-peek-find-definitions)
+         ("M-?" . lsp-ui-peek-find-references))
   :commands lsp)
 
 (use-package lsp-ui
