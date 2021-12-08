@@ -235,6 +235,7 @@ There are two things you can do about this warning:
  '(lsp-headerline-breadcrumb-path-face ((t nil)))
  '(lsp-headerline-breadcrumb-project-prefix-face ((t nil)))
  '(lsp-headerline-breadcrumb-symbols-face ((t (:inherit font-lock-function-name-face :weight normal))))
+ '(lsp-lsp-flycheck-info-unnecessary-face ((t (:inherit warning))) t)
  '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
  '(speedbar-button-face ((((class color) (background dark)) (:foreground "green3"))))
