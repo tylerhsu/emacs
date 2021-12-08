@@ -46,13 +46,16 @@ There are two things you can do about this warning:
                       (setq web-mode-enable-current-column-highlight t)
                       ;; subword mode - stop at camelcase word boundaries
                       (subword-mode)
-                      ;; hideshow mode - code folding
-                      (hs-minor-mode)
                       ))
   :config
   (setq web-mode-content-types-alist '(("jsx" . "\\.[jt]sx")
                                        ("javascript"  . "[jt]s")))
   :commands web-mode)
+
+(use-package js-jsx-mode
+  :mode ("\\.m?jsx?\\'" . js-jsx-mode)
+  :hook (js-mode . (lambda ()
+                         (subword-mode))))
 
 ;; Installed servers (M-x lsp-install-server RET <server> RET)
 ;; ts-ls, eslint,
