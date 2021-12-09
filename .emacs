@@ -55,7 +55,7 @@ There are two things you can do about this warning:
 (use-package js-jsx-mode
   :mode ("\\.m?jsx?\\'" . js-jsx-mode)
   :hook (js-mode . (lambda ()
-                         (subword-mode))))
+                     (subword-mode))))
 
 ;; Installed servers (M-x lsp-install-server RET <server> RET)
 ;; ts-ls, eslint,
@@ -187,6 +187,8 @@ There are two things you can do about this warning:
     (define-key map (kbd "C-c C-c") 'er/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
+    (define-key map (kbd "M-.") 'lsp-ui-peek-find-definitions)
+    (define-key map (kbd "M-?") 'lsp-ui-peek-find-references)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'linum-mode)
     (define-key map [f12] 'compile)
@@ -233,6 +235,7 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(flycheck-delimited-error ((t (:background "color-52"))))
  '(header-line ((t (:background "color-235" :inverse-video nil :underline t))))
  '(helm-ff-directory ((t (:foreground "color-25"))))
  '(helm-ff-dotted-directory ((t (:foreground "brightblack"))))
@@ -241,7 +244,6 @@ There are two things you can do about this warning:
  '(lsp-headerline-breadcrumb-path-face ((t nil)))
  '(lsp-headerline-breadcrumb-project-prefix-face ((t nil)))
  '(lsp-headerline-breadcrumb-symbols-face ((t (:inherit font-lock-function-name-face :weight normal))))
- '(lsp-lsp-flycheck-info-unnecessary-face ((t (:inherit warning))) t)
  '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
  '(speedbar-button-face ((((class color) (background dark)) (:foreground "green3"))))
@@ -266,7 +268,7 @@ There are two things you can do about this warning:
  '(linum-format "%d ")
  '(lsp-enable-symbol-highlighting nil)
  '(lsp-headerline-breadcrumb-segments '(project path-up-to-project file symbols))
- '(lsp-ui-sideline-show-diagnostics nil)
+ '(lsp-ui-sideline-show-diagnostics t)
  '(package-selected-packages
    '(use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(safe-local-variable-values
