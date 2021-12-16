@@ -126,6 +126,7 @@ There are two things you can do about this warning:
 (use-package rjsx-mode
   :ensure t
   :mode ("\\.m?jsx?\\'" . js-jsx-mode)
+  
   :init
   (advice-add 'js-jsx-enable :override #'my-js-jsx-enable)
   (defun my-js-jsx-enable ()
@@ -135,6 +136,7 @@ There are two things you can do about this warning:
   ;; Prevent the `rjsx-mode' ancestor `js-mode' from continuing to check
   ;; for JSX code.
   :hook (rjsx-mode . (lambda ()
+                       (local-unset-key (kbd "C-c C-o"))
                        (subword-mode)
                        (remove-hook 'after-change-functions
                                     #'js-jsx--detect-after-change t))))
@@ -283,6 +285,7 @@ There are two things you can do about this warning:
  '(helm-display-header-line t)
  '(helm-recentf-fuzzy-match t)
  '(js-indent-level 2)
+ '(js2-mode-show-parse-errors nil)
  '(linum-format "%d ")
  '(lsp-enable-symbol-highlighting nil)
  '(lsp-headerline-breadcrumb-segments '(project path-up-to-project file symbols))

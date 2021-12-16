@@ -7,6 +7,7 @@
         indent-for-tab-command
         kill-region
         repeat
+        rjsx-delete-creates-full-tag
         tabbar-backward-tab
         ))
 
