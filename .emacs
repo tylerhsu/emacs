@@ -52,13 +52,8 @@ There are two things you can do about this warning:
                                        ("javascript"  . "[jt]s")))
   :commands web-mode)
 
-(use-package js-jsx-mode
-  :mode ("\\.m?jsx?\\'" . js-jsx-mode)
-  :hook (js-mode . (lambda ()
-                     (subword-mode))))
-
-;; Installed servers (M-x lsp-install-server RET <server> RET)
-;; ts-ls, eslint,
+;; Installed servers (M-x lsp-install-server RET <server> RET):
+;; ts-ls, eslint, dockerfile-ls, css-ls
 (use-package lsp-mode
   :ensure t
   :init
@@ -67,9 +62,14 @@ There are two things you can do about this warning:
   :hook ((typescript-mode . lsp)
          (typescript-tsx-mode . lsp)
          (js-mode . lsp)
+         (css-mode . lsp)
          (dockerfile-mode . lsp))
   :bind (("M-." . lsp-ui-peek-find-definitions)
          ("M-?" . lsp-ui-peek-find-references))
+  :config
+  ;; performance suggestions from https://emacs-lsp.github.io/lsp-mode/page/performance/
+  (setq gc-cons-threshold 100000000)
+  (setq read-process-output-max (* 1024 1024)) ;; 1mb
   :commands lsp)
 
 (use-package lsp-ui
@@ -122,6 +122,23 @@ There are two things you can do about this warning:
 
 (use-package expand-region
   :ensure t)
+
+(use-package rjsx-mode
+  :ensure t
+  :mode ("\\.m?jsx?\\'" . js-jsx-mode)
+  :init
+  (advice-add 'js-jsx-enable :override #'my-js-jsx-enable)
+  (defun my-js-jsx-enable ()
+    "Use `rjsx-mode' instead of `js-jsx-mode'."
+    (cl-letf (((symbol-function 'js-jsx--detect-and-enable) (lambda () t)))
+      (rjsx-mode)))
+  ;; Prevent the `rjsx-mode' ancestor `js-mode' from continuing to check
+  ;; for JSX code.
+  :hook (rjsx-mode . (lambda ()
+                       (subword-mode)
+                       (remove-hook 'after-change-functions
+                                    #'js-jsx--detect-after-change t))))
+
 
 ;; Display
 
@@ -259,7 +276,8 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(company-idle-delay 0)
+ '(company-idle-delay nil)
+ '(css-indent-offset 2)
  '(helm-boring-buffer-regexp-list
    '("\\` " "\\`\\*helm" "\\`\\*Echo Area" "\\`\\*Minibuf" "\\`\\*.+\\*"))
  '(helm-display-header-line t)
