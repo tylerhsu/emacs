@@ -68,6 +68,7 @@ There are two things you can do about this warning:
   :bind (("M-." . lsp-ui-peek-find-definitions)
          ("M-?" . lsp-ui-peek-find-references))
   :config
+  (setq company-backends '(company-capf))
   ;; performance suggestions from https://emacs-lsp.github.io/lsp-mode/page/performance/
   (setq gc-cons-threshold 100000000)
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
@@ -138,10 +139,14 @@ There are two things you can do about this warning:
   ;; for JSX code.
   :hook (rjsx-mode . (lambda ()
                        (local-unset-key (kbd "C-c C-o"))
+                       (local-unset-key (kbd "<"))
                        (subword-mode)
                        (remove-hook 'after-change-functions
                                     #'js-jsx--detect-after-change t))))
 
+(use-package yasnippet
+  :ensure t
+  :init (yas-global-mode 1))
 
 ;; Display
 
@@ -279,7 +284,11 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(company-idle-delay nil)
+ '(company-backends
+   '(company-capf company-bbdb company-semantic company-cmake company-clang company-files
+                  (company-dabbrev-code company-gtags company-etags company-keywords)
+                  company-oddmuse company-dabbrev))
+ '(company-idle-delay 0)
  '(css-indent-offset 2)
  '(helm-boring-buffer-regexp-list
    '("\\` " "\\`\\*helm" "\\`\\*Echo Area" "\\`\\*Minibuf" "\\`\\*.+\\*"))
@@ -289,6 +298,8 @@ There are two things you can do about this warning:
  '(js2-mode-show-parse-errors nil)
  '(linum-format "%d ")
  '(lsp-enable-symbol-highlighting nil)
+ '(lsp-file-watch-ignored-directories
+   '("[/\\\\]\\.git\\'" "[/\\\\]\\.github\\'" "[/\\\\]\\.circleci\\'" "[/\\\\]\\.hg\\'" "[/\\\\]\\.bzr\\'" "[/\\\\]_darcs\\'" "[/\\\\]\\.svn\\'" "[/\\\\]_FOSSIL_\\'" "[/\\\\]\\.idea\\'" "[/\\\\]\\.ensime_cache\\'" "[/\\\\]\\.eunit\\'" "[/\\\\]node_modules" "[/\\\\]\\.yarn\\'" "[/\\\\]\\.fslckout\\'" "[/\\\\]\\.tox\\'" "[/\\\\]dist\\'" "[/\\\\]dist-newstyle\\'" "[/\\\\]\\.stack-work\\'" "[/\\\\]\\.bloop\\'" "[/\\\\]\\.metals\\'" "[/\\\\]target\\'" "[/\\\\]\\.ccls-cache\\'" "[/\\\\]\\.vscode\\'" "[/\\\\]\\.venv\\'" "[/\\\\]\\.deps\\'" "[/\\\\]build-aux\\'" "[/\\\\]autom4te.cache\\'" "[/\\\\]\\.reference\\'" "[/\\\\]\\.lsp\\'" "[/\\\\]\\.clj-kondo\\'" "[/\\\\]\\.shadow-cljs\\'" "[/\\\\]\\.babel_cache\\'" "[/\\\\]\\.cpcache\\'" "[/\\\\]\\checkouts\\'" "[/\\\\]\\.m2\\'" "[/\\\\]bin/Debug\\'" "[/\\\\]obj\\'" "[/\\\\]_opam\\'" "[/\\\\]_build\\'" "[/\\\\]\\.direnv\\'" "[/\\\\]\\.log\\'"))
  '(lsp-headerline-breadcrumb-segments '(project path-up-to-project file symbols))
  '(lsp-ui-sideline-show-diagnostics t)
  '(package-selected-packages

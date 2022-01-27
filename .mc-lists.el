@@ -8,6 +8,7 @@
         kill-region
         repeat
         rjsx-delete-creates-full-tag
+        rjsx-electric-gt
         tabbar-backward-tab
         ))
 
