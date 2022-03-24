@@ -146,6 +146,9 @@ There are two things you can do about this warning:
   :ensure t
   :init (yas-global-mode 1))
 
+(use-package ace-jump-mode
+  :ensure t)
+
 ;; Display
 
 ;; remove toolbar, menu bar
@@ -212,6 +215,7 @@ There are two things you can do about this warning:
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
     (define-key map (kbd "M-.") 'lsp-ui-peek-find-definitions)
     (define-key map (kbd "M-?") 'lsp-ui-peek-find-references)
+    (define-key map (kbd "C-c C-j") 'ace-jump-mode)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'linum-mode)
     (define-key map [f12] 'compile)
@@ -287,11 +291,13 @@ There are two things you can do about this warning:
                   company-oddmuse company-dabbrev))
  '(company-idle-delay 0.5)
  '(css-indent-offset 2)
+ '(eldoc-mode-hook '(eldoc-mode-set-explicitly))
  '(helm-boring-buffer-regexp-list
    '("\\` " "\\`\\*helm" "\\`\\*Echo Area" "\\`\\*Minibuf" "\\`\\*.+\\*"))
  '(helm-boring-file-regexp-list
    '("\\.o$" "~$" "\\.bin$" "\\.lbin$" "\\.so$" "\\.a$" "\\.ln$" "\\.blg$" "\\.bbl$" "\\.elc$" "\\.lof$" "\\.glo$" "\\.idx$" "\\.lot$" "\\.svn\\(/\\|$\\)" "\\.hg\\(/\\|$\\)" "\\.git\\(/\\|$\\)" "\\.bzr\\(/\\|$\\)" "CVS\\(/\\|$\\)" "_darcs\\(/\\|$\\)" "_MTN\\(/\\|$\\)" "\\.fmt$" "\\.tfm$" "\\.class$" "\\.fas$" "\\.lib$" "\\.mem$" "\\.x86f$" "\\.sparcf$" "\\.dfsl$" "\\.pfsl$" "\\.d64fsl$" "\\.p64fsl$" "\\.lx64fsl$" "\\.lx32fsl$" "\\.dx64fsl$" "\\.dx32fsl$" "\\.fx64fsl$" "\\.fx32fsl$" "\\.sx64fsl$" "\\.sx32fsl$" "\\.wx64fsl$" "\\.wx32fsl$" "\\.fasl$" "\\.ufsl$" "\\.fsl$" "\\.dxl$" "\\.lo$" "\\.la$" "\\.gmo$" "\\.mo$" "\\.toc$" "\\.aux$" "\\.cp$" "\\.fn$" "\\.ky$" "\\.pg$" "\\.tp$" "\\.vr$" "\\.cps$" "\\.fns$" "\\.kys$" "\\.pgs$" "\\.tps$" "\\.vrs$" "\\.pyc$" "\\.pyo$"))
  '(helm-display-header-line t)
+ '(helm-eldoc-in-minibuffer-show-fn '##)
  '(helm-ff-skip-boring-files nil)
  '(helm-recentf-fuzzy-match t)
  '(js-indent-level 2)
@@ -304,6 +310,9 @@ There are two things you can do about this warning:
  '(lsp-file-watch-ignored-directories
    '("[/\\\\]\\.git\\'" "[/\\\\]\\.github\\'" "[/\\\\]\\.circleci\\'" "[/\\\\]\\.hg\\'" "[/\\\\]\\.bzr\\'" "[/\\\\]_darcs\\'" "[/\\\\]\\.svn\\'" "[/\\\\]_FOSSIL_\\'" "[/\\\\]\\.idea\\'" "[/\\\\]\\.ensime_cache\\'" "[/\\\\]\\.eunit\\'" "[/\\\\]node_modules" "[/\\\\]\\.yarn\\'" "[/\\\\]\\.fslckout\\'" "[/\\\\]\\.tox\\'" "[/\\\\]dist\\'" "[/\\\\]dist-newstyle\\'" "[/\\\\]\\.stack-work\\'" "[/\\\\]\\.bloop\\'" "[/\\\\]\\.metals\\'" "[/\\\\]target\\'" "[/\\\\]\\.ccls-cache\\'" "[/\\\\]\\.vscode\\'" "[/\\\\]\\.venv\\'" "[/\\\\]\\.deps\\'" "[/\\\\]build-aux\\'" "[/\\\\]autom4te.cache\\'" "[/\\\\]\\.reference\\'" "[/\\\\]\\.lsp\\'" "[/\\\\]\\.clj-kondo\\'" "[/\\\\]\\.shadow-cljs\\'" "[/\\\\]\\.babel_cache\\'" "[/\\\\]\\.cpcache\\'" "[/\\\\]\\checkouts\\'" "[/\\\\]\\.m2\\'" "[/\\\\]bin/Debug\\'" "[/\\\\]obj\\'" "[/\\\\]_opam\\'" "[/\\\\]_build\\'" "[/\\\\]\\.direnv\\'" "[/\\\\]\\.log\\'" "[/\\\\]\\build\\'"))
  '(lsp-headerline-breadcrumb-segments '(project path-up-to-project file symbols))
+ '(lsp-signature-auto-activate '(:on-server-request))
+ '(lsp-ui-sideline-diagnostic-max-line-length 150)
+ '(lsp-ui-sideline-diagnostic-max-lines 5)
  '(lsp-ui-sideline-show-diagnostics t)
  '(package-selected-packages
    '(use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
