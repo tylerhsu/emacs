@@ -53,6 +53,13 @@ There are two things you can do about this warning:
                                        ("javascript"  . "[jt]s")))
   :commands web-mode)
 
+(use-package lsp-python-ms
+  :ensure t
+  :init (setq lsp-python-ms-auto-install-server t)
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-python-ms)
+                          (lsp))))  ; or lsp-deferred
+
 ;; Installed servers (M-x lsp-install-server RET <server> RET):
 ;; ts-ls, eslint, dockerfile-ls, css-ls
 (use-package lsp-mode
@@ -64,6 +71,7 @@ There are two things you can do about this warning:
          (typescript-tsx-mode . lsp)
          (js-mode . lsp)
          (css-mode . lsp)
+         (go-mode . lsp)
          (dockerfile-mode . lsp))
   :config
   (setq company-backends '(company-capf))
@@ -71,6 +79,9 @@ There are two things you can do about this warning:
   (setq gc-cons-threshold 100000000)
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
   :commands lsp)
+
+(use-package go-mode
+  :ensure t)
 
 (use-package lsp-ui
   :ensure t
@@ -288,7 +299,7 @@ There are two things you can do about this warning:
  '(company-backends
    '(company-capf company-bbdb company-semantic company-cmake company-clang company-files
                   (company-dabbrev-code company-gtags company-etags company-keywords)
-                  company-oddmuse company-dabbrev))
+                  company-oddmuse company-dabbrev) t)
  '(company-idle-delay 0.5)
  '(css-indent-offset 2)
  '(eldoc-mode-hook '(eldoc-mode-set-explicitly))
@@ -315,7 +326,8 @@ There are two things you can do about this warning:
  '(lsp-ui-sideline-diagnostic-max-lines 5)
  '(lsp-ui-sideline-show-diagnostics t)
  '(package-selected-packages
-   '(use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+ '(python-indent-guess-indent-offset nil)
  '(safe-local-variable-values
    '((require-final-newline nil)
      (mode-require-final-newline nil)

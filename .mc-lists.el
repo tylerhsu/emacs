@@ -4,8 +4,10 @@
 (setq mc/cmds-to-run-for-all
       '(
         dabbrev-expand
+        delete-horizontal-space
         indent-for-tab-command
         kill-region
+        org-self-insert-command
         repeat
         rjsx-delete-creates-full-tag
         rjsx-electric-gt
@@ -17,7 +19,9 @@
         comint-delchar-or-maybe-eof
         comment-dwim
         find-file
+        helm-projectile
         js2-mode-hide-element
+        org-delete-char
         scroll-down-line
         scroll-up-line
         suspend-frame
