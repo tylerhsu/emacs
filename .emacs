@@ -50,15 +50,15 @@ There are two things you can do about this warning:
                       ))
   :config
   (setq web-mode-content-types-alist '(("jsx" . "\\.[jt]sx")
-                                       ("javascript"  . "[jt]s")))
+                                       ("javascript"  . "\\.[jt]s")))
   :commands web-mode)
+
+(use-package vue-mode
+  :ensure t)
 
 (use-package lsp-python-ms
   :ensure t
-  :init (setq lsp-python-ms-auto-install-server t)
-  :hook (python-mode . (lambda ()
-                          (require 'lsp-python-ms)
-                          (lsp))))  ; or lsp-deferred
+  :init (setq lsp-python-ms-auto-install-server t))
 
 ;; Installed servers (M-x lsp-install-server RET <server> RET):
 ;; ts-ls, eslint, dockerfile-ls, css-ls
@@ -70,8 +70,12 @@ There are two things you can do about this warning:
   :hook ((typescript-mode . lsp)
          (typescript-tsx-mode . lsp)
          (js-mode . lsp)
+         (vue-mode . lsp)
          (css-mode . lsp)
          (go-mode . lsp)
+         (python-mode . (lambda ()
+                          (require 'lsp-python-ms)
+                          (lsp)))
          (dockerfile-mode . lsp))
   :config
   (setq company-backends '(company-capf))
