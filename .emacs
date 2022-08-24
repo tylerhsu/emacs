@@ -61,7 +61,7 @@ There are two things you can do about this warning:
   :init (setq lsp-python-ms-auto-install-server t))
 
 ;; Installed servers (M-x lsp-install-server RET <server> RET):
-;; ts-ls, eslint, dockerfile-ls, css-ls
+;; ts-ls, dockerfile-ls, css-ls, vls (for vuejs)
 (use-package lsp-mode
   :ensure t
   :init
