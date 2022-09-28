@@ -56,12 +56,15 @@ There are two things you can do about this warning:
 (use-package vue-mode
   :ensure t)
 
+(use-package svelte-mode
+  :ensure t)
+
 (use-package lsp-python-ms
   :ensure t
   :init (setq lsp-python-ms-auto-install-server t))
 
 ;; Installed servers (M-x lsp-install-server RET <server> RET):
-;; ts-ls, dockerfile-ls, css-ls, vls (for vuejs)
+;; ts-ls, dockerfile-ls, css-ls, vls (for vuejs), svelte-ls
 (use-package lsp-mode
   :ensure t
   :init
@@ -71,6 +74,7 @@ There are two things you can do about this warning:
          (typescript-tsx-mode . lsp)
          (js-mode . lsp)
          (vue-mode . lsp)
+         (svelte-mode . lsp)
          (css-mode . lsp)
          (go-mode . lsp)
          (python-mode . (lambda ()
@@ -331,9 +335,17 @@ There are two things you can do about this warning:
  '(lsp-ui-sideline-show-diagnostics t)
  '(package-selected-packages
    '(go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+ '(projectile-globally-ignored-directories
+   '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-indent-guess-indent-offset nil)
  '(safe-local-variable-values
-   '((require-final-newline nil)
+   '((lsp-python-ms-extra-paths .
+                                ["/Users/tyler/ebcs/clients/modules" "/opt/web2py" "/opt/web2py/gluon/packages/dal"])
+     (lsp-python-ms-extra-paths .
+                                ["/Users/tyler/ebcs/clients/modules" "/opt/web2py" "/opt/web2py/gluon/packages"])
+     (lsp-python-ms-extra-paths .
+                                ["/Users/tyler/ebcs/clients/modules" "/opt/web2py"])
+     (require-final-newline nil)
      (mode-require-final-newline nil)
      (content-type . "jsx")
      (web-mode-content-type . "jsx")))
