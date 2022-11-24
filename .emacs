@@ -142,24 +142,24 @@ There are two things you can do about this warning:
 (use-package expand-region
   :ensure t)
 
-(use-package rjsx-mode
-  :ensure t
-  :mode ("\\.m?jsx?\\'" . js-jsx-mode)
+;; (use-package rjsx-mode
+;;   :ensure t
+;;   :mode ("\\.m?jsx?\\'" . js-jsx-mode)
   
-  :init
-  (advice-add 'js-jsx-enable :override #'my-js-jsx-enable)
-  (defun my-js-jsx-enable ()
-    "Use `rjsx-mode' instead of `js-jsx-mode'."
-    (cl-letf (((symbol-function 'js-jsx--detect-and-enable) (lambda () t)))
-      (rjsx-mode)))
-  ;; Prevent the `rjsx-mode' ancestor `js-mode' from continuing to check
-  ;; for JSX code.
-  :hook (rjsx-mode . (lambda ()
-                       (local-unset-key (kbd "C-c C-o"))
-                       (local-unset-key (kbd "<"))
-                       (subword-mode)
-                       (remove-hook 'after-change-functions
-                                    #'js-jsx--detect-after-change t))))
+;;   :init
+;;   (advice-add 'js-jsx-enable :override #'my-js-jsx-enable)
+;;   (defun my-js-jsx-enable ()
+;;     "Use `rjsx-mode' instead of `js-jsx-mode'."
+;;     (cl-letf (((symbol-function 'js-jsx--detect-and-enable) (lambda () t)))
+;;       (rjsx-mode)))
+;;   ;; Prevent the `rjsx-mode' ancestor `js-mode' from continuing to check
+;;   ;; for JSX code.
+;;   :hook (rjsx-mode . (lambda ()
+;;                        (local-unset-key (kbd "C-c C-o"))
+;;                        (local-unset-key (kbd "<"))
+;;                        (subword-mode)
+;;                        (remove-hook 'after-change-functions
+;;                                     #'js-jsx--detect-after-change t))))
 
 (use-package yasnippet
   :ensure t

@@ -12,6 +12,8 @@
         rjsx-delete-creates-full-tag
         rjsx-electric-gt
         tabbar-backward-tab
+        yaml-electric-backspace
+        yaml-electric-bar-and-angle
         ))
 
 (setq mc/cmds-to-run-once
@@ -24,5 +26,6 @@
         org-delete-char
         scroll-down-line
         scroll-up-line
+        sgml-slash
         suspend-frame
         ))
