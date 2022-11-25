@@ -7,51 +7,60 @@
 
 (setq byte-compile-warnings '(cl-functions))
 
-;; load MELPA packages
-(require 'package)
-(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
-                    (not (gnutls-available-p))))
-       (proto (if no-ssl "http" "https")))
-  (when no-ssl
-    (warn "\
-Your version of Emacs does not support SSL connections,
-which is unsafe because it allows man-in-the-middle attacks.
-There are two things you can do about this warning:
-1. Install an Emacs version that does support SSL and be safe.
-2. Remove this warning from your init file so you won't see it again."))
-  ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
-  (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
-  ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
-  (when (< emacs-major-version 24)
-    ;; For important compatibility libraries like cl-lib
-    (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
+(use-package eglot
+  :ensure t
+  :config
+  ;; https://github.com/joaotavora/eglot/discussions/898
+  ;; show docs and diagnostics both at once in echo area when hovering
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              ;; Show flymake diagnostics first.
+              (setq eldoc-documentation-functions
+                    (cons #'flymake-eldoc-function
+                          (remove #'flymake-eldoc-function eldoc-documentation-functions)))
+              ;; Show all eldoc feedback.
+              (setq eldoc-documentation-strategy #'eldoc-documentation-compose)))
+  :hook ((typescript-mode . eglot-ensure)))
+
+(use-package tree-sitter
+  :ensure t
+  :config
+  (use-package tree-sitter-langs :ensure t)
+  ;; activate tree-sitter on any buffer containing code for which it has a parser available
+  (global-tree-sitter-mode)
+  ;; use tree-sitter for syntax highlighting
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
 
 (use-package yaml-mode
   :ensure t
   :commands yaml-mode)
 
-(use-package web-mode
-  :ensure t
+(use-package typescript-mode
+  :after tree-sitter
   :init
-  (define-derived-mode typescript-tsx-mode web-mode "Typescript[TSX]")
-  :mode ("\\.tsx?\\'" . typescript-tsx-mode)
-  :hook (web-mode . (lambda()
-                      (setq web-mode-markup-indent-offset 2)
-                      (setq web-mode-code-indent-offset 2)
-                      (setq standard-indent 2)
-                      (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
-                      (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
-                      (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
-                      (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
-                      (setq web-mode-enable-current-element-highlight t)
-                      (setq web-mode-enable-current-column-highlight t)
-                      ;; subword mode - stop at camelcase word boundaries
-                      (subword-mode)
-                      ))
+  ;; The particular name typescriptreact-mode is necessary to get
+  ;; eglot to send the correct languageId to the lsp server.  See
+  ;; https://github.com/joaotavora/eglot/issues/624.  Without this,
+  ;; tsx is not recognized, so you get millions of diagnostic errors
+  ;; from the lsp server wherever there is tsx in the file.
+  (define-derived-mode typescriptreact-mode typescript-mode "TypeScript TSX")
+  ;; tree-sitter-based indentation for typescript/tsx
+  ;; not on melpa, so I've installed it in .emacs.d/site-lisp
+  ;; https://github.com/orzechowskid/tsi.el/
+  (use-package tsi-typescript :load-path "site-lisp")
+  ;; Have flymake report eslint diagnostics
+  ;; https://github.com/orzechowskid/flymake-eslint
+  (use-package flymake-eslint :ensure t)
   :config
-  (setq web-mode-content-types-alist '(("jsx" . "\\.[jt]sx")
-                                       ("javascript"  . "\\.[jt]s")))
-  :commands web-mode)
+  (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx))
+  :mode ("\\.[jt]sx?\\'" . typescriptreact-mode)
+  :hook (typescript-mode . (lambda()
+                             ;; Enable flymake-eslint. Getting this to work required an edit to flymake-eslint.el.
+                             ;; https://github.com/orzechowskid/flymake-eslint/issues/23
+                             (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js"))
+                             (flymake-eslint-enable)
+                             (tsi-typescript-mode)
+                             (subword-mode))))
 
 (use-package vue-mode
   :ensure t)
@@ -59,52 +68,13 @@ There are two things you can do about this warning:
 (use-package svelte-mode
   :ensure t)
 
-(use-package lsp-python-ms
-  :ensure t
-  :init (setq lsp-python-ms-auto-install-server t))
-
-;; Installed servers (M-x lsp-install-server RET <server> RET):
-;; ts-ls, dockerfile-ls, css-ls, vls (for vuejs), svelte-ls
-(use-package lsp-mode
-  :ensure t
-  :init
-  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-  (setq lsp-keymap-prefix "C-c l")
-  :hook ((typescript-mode . lsp)
-         (typescript-tsx-mode . lsp)
-         (js-mode . lsp)
-         (vue-mode . lsp)
-         (svelte-mode . lsp)
-         (css-mode . lsp)
-         (go-mode . lsp)
-         (python-mode . (lambda ()
-                          (require 'lsp-python-ms)
-                          (lsp)))
-         (dockerfile-mode . lsp))
-  :config
-  (setq company-backends '(company-capf))
-  ;; performance suggestions from https://emacs-lsp.github.io/lsp-mode/page/performance/
-  (setq gc-cons-threshold 100000000)
-  (setq read-process-output-max (* 1024 1024)) ;; 1mb
-  :commands lsp)
-
 (use-package go-mode
   :ensure t)
 
-(use-package lsp-ui
-  :ensure t
-  :commands lsp-ui-mode)
-
-(use-package company
-  :ensure t
-  :bind ("M-/" . company-complete)
-  :hook (lsp-mode . company-mode))
-
-(use-package flycheck
-  :ensure t
-  :config
-  ; enable flycheck in all buffers where checking is possible
-  (add-hook 'after-init-hook #'global-flycheck-mode))
+;; (use-package company
+;;   :ensure t
+;;   :bind ("M-/" . company-complete)
+;;   :hook (eglot-mode . company-mode))
 
 (use-package multiple-cursors
   :ensure t)
@@ -141,25 +111,6 @@ There are two things you can do about this warning:
 
 (use-package expand-region
   :ensure t)
-
-;; (use-package rjsx-mode
-;;   :ensure t
-;;   :mode ("\\.m?jsx?\\'" . js-jsx-mode)
-  
-;;   :init
-;;   (advice-add 'js-jsx-enable :override #'my-js-jsx-enable)
-;;   (defun my-js-jsx-enable ()
-;;     "Use `rjsx-mode' instead of `js-jsx-mode'."
-;;     (cl-letf (((symbol-function 'js-jsx--detect-and-enable) (lambda () t)))
-;;       (rjsx-mode)))
-;;   ;; Prevent the `rjsx-mode' ancestor `js-mode' from continuing to check
-;;   ;; for JSX code.
-;;   :hook (rjsx-mode . (lambda ()
-;;                        (local-unset-key (kbd "C-c C-o"))
-;;                        (local-unset-key (kbd "<"))
-;;                        (subword-mode)
-;;                        (remove-hook 'after-change-functions
-;;                                     #'js-jsx--detect-after-change t))))
 
 (use-package yasnippet
   :ensure t
@@ -232,8 +183,10 @@ There are two things you can do about this warning:
     (define-key map (kbd "C-c C-c") 'er/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
-    (define-key map (kbd "M-.") 'lsp-ui-peek-find-definitions)
-    (define-key map (kbd "M-?") 'lsp-ui-peek-find-references)
+    (define-key map (kbd "M-/") 'completion-at-point)
+    (define-key map (kbd "C-h .") 'display-local-help)
+    ;; (define-key map (kbd "M-.") 'lsp-ui-peek-find-definitions)
+    ;; (define-key map (kbd "M-?") 'lsp-ui-peek-find-references)
     (define-key map (kbd "C-c C-j") 'ace-jump-mode)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'linum-mode)
@@ -280,6 +233,8 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(completions-annotations ((t (:foreground "brightblack"))))
+ '(eglot-diagnostic-tag-unnecessary-face ((t (:inherit warning))))
  '(flycheck-delimited-error ((t (:background "color-52"))))
  '(header-line ((t (:background "color-235" :inverse-video nil :underline t))))
  '(helm-ff-directory ((t (:foreground "color-25"))))
@@ -304,11 +259,6 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(company-backends
-   '(company-capf company-bbdb company-semantic company-cmake company-clang company-files
-                  (company-dabbrev-code company-gtags company-etags company-keywords)
-                  company-oddmuse company-dabbrev) t)
- '(company-idle-delay 0.5)
  '(css-indent-offset 2)
  '(eldoc-mode-hook '(eldoc-mode-set-explicitly))
  '(helm-boring-buffer-regexp-list
@@ -316,30 +266,19 @@ There are two things you can do about this warning:
  '(helm-boring-file-regexp-list
    '("\\.o$" "~$" "\\.bin$" "\\.lbin$" "\\.so$" "\\.a$" "\\.ln$" "\\.blg$" "\\.bbl$" "\\.elc$" "\\.lof$" "\\.glo$" "\\.idx$" "\\.lot$" "\\.svn\\(/\\|$\\)" "\\.hg\\(/\\|$\\)" "\\.git\\(/\\|$\\)" "\\.bzr\\(/\\|$\\)" "CVS\\(/\\|$\\)" "_darcs\\(/\\|$\\)" "_MTN\\(/\\|$\\)" "\\.fmt$" "\\.tfm$" "\\.class$" "\\.fas$" "\\.lib$" "\\.mem$" "\\.x86f$" "\\.sparcf$" "\\.dfsl$" "\\.pfsl$" "\\.d64fsl$" "\\.p64fsl$" "\\.lx64fsl$" "\\.lx32fsl$" "\\.dx64fsl$" "\\.dx32fsl$" "\\.fx64fsl$" "\\.fx32fsl$" "\\.sx64fsl$" "\\.sx32fsl$" "\\.wx64fsl$" "\\.wx32fsl$" "\\.fasl$" "\\.ufsl$" "\\.fsl$" "\\.dxl$" "\\.lo$" "\\.la$" "\\.gmo$" "\\.mo$" "\\.toc$" "\\.aux$" "\\.cp$" "\\.fn$" "\\.ky$" "\\.pg$" "\\.tp$" "\\.vr$" "\\.cps$" "\\.fns$" "\\.kys$" "\\.pgs$" "\\.tps$" "\\.vrs$" "\\.pyc$" "\\.pyo$"))
  '(helm-display-header-line t)
- '(helm-eldoc-in-minibuffer-show-fn '##)
  '(helm-ff-skip-boring-files nil)
  '(helm-recentf-fuzzy-match t)
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
  '(linum-format "%d ")
- '(lsp-enable-symbol-highlighting nil)
- '(lsp-eslint-download-url
-   "https://github.com/emacs-lsp/lsp-server-binaries/blob/master/dbaeumer.vscode-eslint-2.2.2.vsix?raw=true")
- '(lsp-eslint-run "onType")
- '(lsp-file-watch-ignored-directories
-   '("[/\\\\]\\.git\\'" "[/\\\\]\\.github\\'" "[/\\\\]\\.circleci\\'" "[/\\\\]\\.hg\\'" "[/\\\\]\\.bzr\\'" "[/\\\\]_darcs\\'" "[/\\\\]\\.svn\\'" "[/\\\\]_FOSSIL_\\'" "[/\\\\]\\.idea\\'" "[/\\\\]\\.ensime_cache\\'" "[/\\\\]\\.eunit\\'" "[/\\\\]node_modules" "[/\\\\]\\.yarn\\'" "[/\\\\]\\.fslckout\\'" "[/\\\\]\\.tox\\'" "[/\\\\]dist\\'" "[/\\\\]dist-newstyle\\'" "[/\\\\]\\.stack-work\\'" "[/\\\\]\\.bloop\\'" "[/\\\\]\\.metals\\'" "[/\\\\]target\\'" "[/\\\\]\\.ccls-cache\\'" "[/\\\\]\\.vscode\\'" "[/\\\\]\\.venv\\'" "[/\\\\]\\.deps\\'" "[/\\\\]build-aux\\'" "[/\\\\]autom4te.cache\\'" "[/\\\\]\\.reference\\'" "[/\\\\]\\.lsp\\'" "[/\\\\]\\.clj-kondo\\'" "[/\\\\]\\.shadow-cljs\\'" "[/\\\\]\\.babel_cache\\'" "[/\\\\]\\.cpcache\\'" "[/\\\\]\\checkouts\\'" "[/\\\\]\\.m2\\'" "[/\\\\]bin/Debug\\'" "[/\\\\]obj\\'" "[/\\\\]_opam\\'" "[/\\\\]_build\\'" "[/\\\\]\\.direnv\\'" "[/\\\\]\\.log\\'" "[/\\\\]\\build\\'"))
- '(lsp-headerline-breadcrumb-segments '(project path-up-to-project file symbols))
- '(lsp-signature-auto-activate '(:on-server-request))
- '(lsp-ui-sideline-diagnostic-max-line-length 150)
- '(lsp-ui-sideline-diagnostic-max-lines 5)
- '(lsp-ui-sideline-show-diagnostics t)
  '(package-selected-packages
-   '(go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-indent-guess-indent-offset nil)
  '(safe-local-variable-values
-   '((lsp-python-ms-extra-paths .
+   '((flymake-eslint-project-root . "/Users/tyler/pittbos-fe")
+     (lsp-python-ms-extra-paths .
                                 ["/Users/tyler/ebcs/clients/modules" "/opt/web2py" "/opt/web2py/gluon/packages/dal"])
      (lsp-python-ms-extra-paths .
                                 ["/Users/tyler/ebcs/clients/modules" "/opt/web2py" "/opt/web2py/gluon/packages"])
@@ -349,10 +288,4 @@ There are two things you can do about this warning:
      (mode-require-final-newline nil)
      (content-type . "jsx")
      (web-mode-content-type . "jsx")))
- '(typescript-indent-level 2)
- '(web-mode-comment-formats
-   '(("java" . "/*")
-     ("javascript" . "//")
-     ("typescript" . "//")
-     ("php" . "/*")
-     ("css" . "/*"))))
+ '(typescript-indent-level 2))
