@@ -19,8 +19,7 @@
                     (cons #'flymake-eldoc-function
                           (remove #'flymake-eldoc-function eldoc-documentation-functions)))
               ;; Show all eldoc feedback.
-              (setq eldoc-documentation-strategy #'eldoc-documentation-compose)))
-  :hook ((typescript-mode . eglot-ensure)))
+              (setq eldoc-documentation-strategy #'eldoc-documentation-compose))))
 
 (use-package tree-sitter
   :ensure t
@@ -36,7 +35,7 @@
   :commands yaml-mode)
 
 (use-package typescript-mode
-  :after tree-sitter
+  :after (tree-sitter eglot)
   :init
   ;; The particular name typescriptreact-mode is necessary to get
   ;; eglot to send the correct languageId to the lsp server.  See
@@ -55,6 +54,7 @@
   (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx))
   :mode ("\\.[jt]sx?\\'" . typescriptreact-mode)
   :hook (typescript-mode . (lambda()
+                             (eglot-ensure)
                              ;; Enable flymake-eslint. Getting this to work required an edit to flymake-eslint.el.
                              ;; https://github.com/orzechowskid/flymake-eslint/issues/23
                              (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js"))
@@ -66,7 +66,11 @@
   :ensure t)
 
 (use-package svelte-mode
-  :ensure t)
+  :after eglot
+  :ensure t
+  :config
+  (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+  :hook (svelte-mode . eglot-ensure))
 
 (use-package go-mode
   :ensure t)
@@ -118,6 +122,13 @@
 
 (use-package ace-jump-mode
   :ensure t)
+
+;; electric indent mode indents both the new line and the previous line when
+;; you press enter. Indent only the new line.
+(use-package prog-mode
+  :init
+  (electric-indent-mode 0)
+  :bind ("RET" . 'electric-newline-and-maybe-indent))
 
 ;; Display
 
@@ -184,7 +195,6 @@
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
     (define-key map (kbd "M-/") 'completion-at-point)
-    (define-key map (kbd "C-h .") 'display-local-help)
     ;; (define-key map (kbd "M-.") 'lsp-ui-peek-find-definitions)
     ;; (define-key map (kbd "M-?") 'lsp-ui-peek-find-references)
     (define-key map (kbd "C-c C-j") 'ace-jump-mode)
@@ -267,6 +277,7 @@
    '("\\.o$" "~$" "\\.bin$" "\\.lbin$" "\\.so$" "\\.a$" "\\.ln$" "\\.blg$" "\\.bbl$" "\\.elc$" "\\.lof$" "\\.glo$" "\\.idx$" "\\.lot$" "\\.svn\\(/\\|$\\)" "\\.hg\\(/\\|$\\)" "\\.git\\(/\\|$\\)" "\\.bzr\\(/\\|$\\)" "CVS\\(/\\|$\\)" "_darcs\\(/\\|$\\)" "_MTN\\(/\\|$\\)" "\\.fmt$" "\\.tfm$" "\\.class$" "\\.fas$" "\\.lib$" "\\.mem$" "\\.x86f$" "\\.sparcf$" "\\.dfsl$" "\\.pfsl$" "\\.d64fsl$" "\\.p64fsl$" "\\.lx64fsl$" "\\.lx32fsl$" "\\.dx64fsl$" "\\.dx32fsl$" "\\.fx64fsl$" "\\.fx32fsl$" "\\.sx64fsl$" "\\.sx32fsl$" "\\.wx64fsl$" "\\.wx32fsl$" "\\.fasl$" "\\.ufsl$" "\\.fsl$" "\\.dxl$" "\\.lo$" "\\.la$" "\\.gmo$" "\\.mo$" "\\.toc$" "\\.aux$" "\\.cp$" "\\.fn$" "\\.ky$" "\\.pg$" "\\.tp$" "\\.vr$" "\\.cps$" "\\.fns$" "\\.kys$" "\\.pgs$" "\\.tps$" "\\.vrs$" "\\.pyc$" "\\.pyo$"))
  '(helm-display-header-line t)
  '(helm-ff-skip-boring-files nil)
+ '(helm-imenu-execute-action-at-once-if-one 'ignore)
  '(helm-recentf-fuzzy-match t)
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
