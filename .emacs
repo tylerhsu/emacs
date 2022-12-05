@@ -7,6 +7,10 @@
 
 (setq byte-compile-warnings '(cl-functions))
 
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(package-initialize)
+
 (use-package eglot
   :ensure t
   :config
@@ -65,6 +69,9 @@
 (use-package vue-mode
   :ensure t)
 
+(use-package python-mode
+  :hook (python-mode . eglot-ensure))
+
 (use-package svelte-mode
   :after eglot
   :ensure t
@@ -73,7 +80,8 @@
   :hook (svelte-mode . eglot-ensure))
 
 (use-package go-mode
-  :ensure t)
+  :ensure t
+  :hook (go-mode . eglot-ensure))
 
 ;; (use-package company
 ;;   :ensure t
@@ -123,12 +131,21 @@
 (use-package ace-jump-mode
   :ensure t)
 
+(use-package restclient
+  :ensure t
+  :mode ("\\.rest\\'" . restclient-mode)
+  :bind (("C-c RET" . restclient-http-send-current))
+  :hook (restclient-mode . (lambda()
+                             (setq-local tab-width 2))))
+
 ;; electric indent mode indents both the new line and the previous line when
 ;; you press enter. Indent only the new line.
 (use-package prog-mode
   :init
   (electric-indent-mode 0)
-  :bind ("RET" . 'electric-newline-and-maybe-indent))
+  :bind ("RET" . 'electric-newline-and-maybe-indent)
+  :hook (prog-mode . (lambda()
+                       (setq-local tab-width 2))))
 
 ;; Display
 
@@ -194,7 +211,8 @@
     (define-key map (kbd "C-c C-c") 'er/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
-    (define-key map (kbd "M-/") 'completion-at-point)
+    (define-key map (kbd "C-c /") 'completion-at-point)
+    (define-key map (kbd "M-/") 'dabbrev-completion)
     ;; (define-key map (kbd "M-.") 'lsp-ui-peek-find-definitions)
     ;; (define-key map (kbd "M-?") 'lsp-ui-peek-find-references)
     (define-key map (kbd "C-c C-j") 'ace-jump-mode)
@@ -270,6 +288,9 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(css-indent-offset 2)
+ '(dabbrev-case-distinction nil)
+ '(dabbrev-case-fold-search t)
+ '(dabbrev-case-replace nil)
  '(eldoc-mode-hook '(eldoc-mode-set-explicitly))
  '(helm-boring-buffer-regexp-list
    '("\\` " "\\`\\*helm" "\\`\\*Echo Area" "\\`\\*Minibuf" "\\`\\*.+\\*"))
