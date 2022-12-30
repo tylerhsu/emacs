@@ -1,4 +1,4 @@
-;;; .emacs --- Tyler's emacs config
+;;; Tyler's emacs config
 
 ;;; Commentary:
 ;; Tyler's Emacs config
@@ -146,6 +146,10 @@
   :bind ("RET" . 'electric-newline-and-maybe-indent)
   :hook (prog-mode . (lambda()
                        (setq-local tab-width 2))))
+
+(use-package epa-file
+  :init
+  (setq epa-pinentry-mode 'loopback))
 
 ;; Display
 
