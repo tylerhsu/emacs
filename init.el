@@ -212,7 +212,7 @@
     (define-key map (kbd "C-c C-p") 'mc/mark-previous-like-this)
     (define-key map (kbd "C-c C-l") 'mc/edit-lines)
     (define-key map (kbd "C-c =") 'mc/mark-all-like-this)
-    (define-key map (kbd "C-c C-c") 'er/expand-region)
+    (define-key map (kbd "C-c SPC") 'er/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
     (define-key map (kbd "C-c /") 'completion-at-point)
@@ -307,6 +307,8 @@
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
  '(linum-format "%d ")
+ '(org-agenda-files
+   '("~/notes/sencap.org.gpg" "/Users/tyler/notes/ebcs.org.gpg" "/Users/tyler/notes/pittbos.org.gpg"))
  '(package-selected-packages
    '(flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
