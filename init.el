@@ -38,6 +38,11 @@
   :ensure t
   :commands yaml-mode)
 
+(defun my-maybe-set-eslint-project-root ()
+  "Set flymake-eslint-project-root if possible"
+  (when (not (eq buffer-file-name nil))
+    (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js"))))
+
 (use-package typescript-mode
   :after (tree-sitter eglot)
   :init
@@ -61,13 +66,19 @@
                              (eglot-ensure)
                              ;; Enable flymake-eslint. Getting this to work required an edit to flymake-eslint.el.
                              ;; https://github.com/orzechowskid/flymake-eslint/issues/23
-                             (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js"))
+                             (my-maybe-set-eslint-project-root)
                              (flymake-eslint-enable)
                              (tsi-typescript-mode)
                              (subword-mode))))
 
 (use-package vue-mode
-  :ensure t)
+  :after eglot
+  :ensure t
+  :config
+  (add-to-list 'eglot-server-programs '(vue-mode . ("vls" "--stdio")))
+  :hook (vue-mode . (lambda()
+                      (eglot-ensure)
+                      (set-face-background 'mmm-default-submode-face nil))))
 
 (use-package python-mode
   :hook (python-mode . eglot-ensure))
@@ -217,8 +228,9 @@
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
     (define-key map (kbd "C-c /") 'completion-at-point)
     (define-key map (kbd "M-/") 'dabbrev-completion)
-    ;; (define-key map (kbd "M-.") 'lsp-ui-peek-find-definitions)
-    ;; (define-key map (kbd "M-?") 'lsp-ui-peek-find-references)
+    (define-key map (kbd "M-.") 'xref-find-definitions)
+    (define-key map (kbd "M-?") 'xref-find-references)
+    (define-key map (kbd "M-,") 'xref-pop-marker-stack)
     (define-key map (kbd "C-c C-j") 'ace-jump-mode)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'linum-mode)
