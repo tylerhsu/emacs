@@ -158,9 +158,11 @@
   :hook (prog-mode . (lambda()
                        (setq-local tab-width 2))))
 
+;; EasyPG
 (use-package epa-file
   :init
-  (setq epa-pinentry-mode 'loopback))
+  (setq epa-pinentry-mode 'loopback)
+  (setq epa-file-cache-passphrase-for-symmetric-encryption t))
 
 ;; Display
 
