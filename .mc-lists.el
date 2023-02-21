@@ -20,7 +20,9 @@
       '(
         comint-delchar-or-maybe-eof
         comment-dwim
+        electric-newline-and-maybe-indent
         find-file
+        helm-mini
         helm-projectile
         js2-mode-hide-element
         org-delete-char

@@ -14,6 +14,7 @@
 (use-package eglot
   :ensure t
   :config
+  (setq eglot-events-buffer-size 0)
   ;; https://github.com/joaotavora/eglot/discussions/898
   ;; show docs and diagnostics both at once in echo area when hovering
   (add-hook 'eglot-managed-mode-hook
