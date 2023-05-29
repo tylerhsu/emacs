@@ -165,6 +165,11 @@
   (setq epa-pinentry-mode 'loopback)
   (setq epa-file-cache-passphrase-for-symmetric-encryption t))
 
+(use-package flymake
+  :bind (("C-c f l" . flymake-show-buffer-diagnostics)
+         ("C-c f n" . flymake-goto-next-error)
+         ("C-c f b" . flymake-goto-prev-error)))
+
 ;; Display
 
 ;; remove toolbar, menu bar
@@ -235,8 +240,9 @@
     (define-key map (kbd "M-?") 'xref-find-references)
     (define-key map (kbd "M-,") 'xref-pop-marker-stack)
     (define-key map (kbd "C-c C-j") 'ace-jump-mode)
+    (define-key map (kbd "C-c C-o") 'helm-occur)
     (define-key map [f3] 'kill-buffer)
-    (define-key map [f4] 'linum-mode)
+    (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
     map)
   "My-keys-minor-mode keymap.")
@@ -287,7 +293,6 @@
  '(helm-ff-directory ((t (:foreground "color-25"))))
  '(helm-ff-dotted-directory ((t (:foreground "brightblack"))))
  '(helm-selection ((t (:inverse-video t))))
- '(linum ((t (:inherit default :foreground "brightblack"))))
  '(lsp-headerline-breadcrumb-path-face ((t nil)))
  '(lsp-headerline-breadcrumb-project-prefix-face ((t nil)))
  '(lsp-headerline-breadcrumb-symbols-face ((t (:inherit font-lock-function-name-face :weight normal))))
@@ -321,13 +326,13 @@
  '(helm-recentf-fuzzy-match t)
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
- '(linum-format "%d ")
  '(org-agenda-files
    '("~/notes/sencap.org.gpg" "/Users/tyler/notes/ebcs.org.gpg" "/Users/tyler/notes/pittbos.org.gpg"))
  '(package-selected-packages
    '(flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
+ '(python-flymake-command nil)
  '(python-indent-guess-indent-offset nil)
  '(safe-local-variable-values
    '((flymake-eslint-project-root . "/Users/tyler/pittbos-fe")

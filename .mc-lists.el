@@ -26,6 +26,7 @@
         helm-projectile
         js2-mode-hide-element
         org-delete-char
+        python-indent-dedent-line
         scroll-down-line
         scroll-up-line
         sgml-slash
