@@ -222,7 +222,10 @@ returned by `next-window'.
 
 When called interactively and more than two windows are open,
 prompt for a buffer name and swap with the window containing that
-buffer."
+buffer.
+
+After I wrote this I discovered `window-swap-states', but I'm
+keeping it because it's the first real command I wrote!"
   (interactive
    (list (let ((num-windows (length (window-list))))
            (cond ((<= num-windows 1)
@@ -271,7 +274,7 @@ buffer."
     (define-key map (kbd "M-,") 'xref-pop-marker-stack)
     (define-key map (kbd "C-c C-j") 'ace-jump-mode)
     (define-key map (kbd "C-c C-o") 'helm-occur)
-    (define-key map (kbd "C-c s") 'tyler/swap-windows)
+    (define-key map (kbd "C-c s") 'window-swap-states)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
