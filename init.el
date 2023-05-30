@@ -214,6 +214,36 @@
   (forward-line 1)
   (yank))
 
+(defun tyler/swap-windows (&optional other-win)
+  "Swap the buffers displayed in the current window and OTHER-WIN.
+
+If no argument is supplied, OTHER-WIN defaults to the window
+returned by `next-window'.
+
+When called interactively and more than two windows are open,
+prompt for a buffer name and swap with the window containing that
+buffer."
+  (interactive
+   (list (let ((num-windows (length (window-list))))
+           (cond ((<= num-windows 1)
+                  (user-error "No other window to swap with"))
+                 ((> num-windows 2)
+                  (get-buffer-window
+                   (read-buffer
+                    "Swap current buffer with: "
+                    (window-buffer (next-window))
+                    nil
+                    (lambda (buf)
+                      (and
+                       (get-buffer-window buf)
+                       (not (eq buf (buffer-name))))))))))))
+  (if (eq other-win nil)
+      (setq other-win (next-window)))
+  (let ((current-buf (current-buffer)))
+    (switch-to-buffer (window-buffer other-win))
+    (select-window other-win)
+    (switch-to-buffer current-buf)))
+
 ;; Minor modes
 
 ;; my key bindings
@@ -241,6 +271,7 @@
     (define-key map (kbd "M-,") 'xref-pop-marker-stack)
     (define-key map (kbd "C-c C-j") 'ace-jump-mode)
     (define-key map (kbd "C-c C-o") 'helm-occur)
+    (define-key map (kbd "C-c s") 'tyler/swap-windows)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
