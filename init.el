@@ -11,6 +11,9 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
+(use-package dash-at-point
+  :ensure t)
+
 (use-package eglot
   :ensure t
   :config
@@ -82,6 +85,8 @@
                       (set-face-background 'mmm-default-submode-face nil))))
 
 (use-package python-mode
+  :after eglot
+  :commands python-mode
   :hook (python-mode . eglot-ensure))
 
 (use-package svelte-mode
@@ -275,6 +280,7 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "C-c C-j") 'ace-jump-mode)
     (define-key map (kbd "C-c C-o") 'helm-occur)
     (define-key map (kbd "C-c s") 'window-swap-states)
+    (define-key map (kbd "C-c d") 'dash-at-point)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
@@ -363,7 +369,7 @@ keeping it because it's the first real command I wrote!"
  '(org-agenda-files
    '("~/notes/sencap.org.gpg" "/Users/tyler/notes/ebcs.org.gpg" "/Users/tyler/notes/pittbos.org.gpg"))
  '(package-selected-packages
-   '(flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-flymake-command nil)
