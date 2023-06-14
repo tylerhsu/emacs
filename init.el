@@ -252,6 +252,17 @@ keeping it because it's the first real command I wrote!"
     (select-window other-win)
     (switch-to-buffer current-buf)))
 
+(defun tyler/reb-query-replace (to-string)
+  "Replace current re-builder RE from point with `query-replace-regexp'."
+  (interactive
+   (progn (barf-if-buffer-read-only)
+          (list (query-replace-read-to (reb-target-binding reb-regexp)
+                                       "Query replace"  t))))
+  (with-current-buffer reb-target-buffer
+    (if (looking-back (reb-target-binding reb-regexp))
+        (re-search-backward (reb-target-binding reb-regexp) nil t))
+    (query-replace-regexp (reb-target-binding reb-regexp) to-string)))
+
 ;; Minor modes
 
 ;; my key bindings
@@ -281,6 +292,9 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "C-c C-o") 'helm-occur)
     (define-key map (kbd "C-c s") 'window-swap-states)
     (define-key map (kbd "C-c d") 'dash-at-point)
+    (define-key map (kbd "C-h a") 'helm-apropos)
+    (define-key map (kbd "C-h z") 'shortdoc-display-group)
+    (define-key map (kbd "C-c M-%") 'tyler/reb-query-replace)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
@@ -387,3 +401,4 @@ keeping it because it's the first real command I wrote!"
      (content-type . "jsx")
      (web-mode-content-type . "jsx")))
  '(typescript-indent-level 2))
+(put 'narrow-to-region 'disabled nil)
