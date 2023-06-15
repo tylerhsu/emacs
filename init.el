@@ -263,6 +263,13 @@ keeping it because it's the first real command I wrote!"
         (re-search-backward (reb-target-binding reb-regexp) nil t))
     (query-replace-regexp (reb-target-binding reb-regexp) to-string)))
 
+(defun tyler/query-replace ()
+  "Invoke the `query-replace' command, or, if the re-builder buffer is open, call `query-replace-regexp' with the current re-builder regexp as the REGEXP argument."
+  (interactive)
+  (if (get-buffer-window reb-buffer)
+      (command-execute 'tyler/reb-query-replace)
+    (command-execute 'query-replace)))
+
 ;; Minor modes
 
 ;; my key bindings
@@ -294,7 +301,7 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "C-c d") 'dash-at-point)
     (define-key map (kbd "C-h a") 'helm-apropos)
     (define-key map (kbd "C-h z") 'shortdoc-display-group)
-    (define-key map (kbd "C-c M-%") 'tyler/reb-query-replace)
+    (define-key map (kbd "M-%") 'tyler/query-replace)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
