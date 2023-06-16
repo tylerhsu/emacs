@@ -12,26 +12,32 @@
 ; Add :defer t to use-package expressions by default
 (setq use-package-always-defer t)
 
-; URLs that will be used when treesit-install-language-grammar is invoked.
-; From https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
-(setq treesit-language-source-alist
-      '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-        (cmake "https://github.com/uyha/tree-sitter-cmake")
-        (css "https://github.com/tree-sitter/tree-sitter-css")
-        (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-        (go "https://github.com/tree-sitter/tree-sitter-go")
-        (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
-        (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
-        (html "https://github.com/tree-sitter/tree-sitter-html")
-        (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
-        (json "https://github.com/tree-sitter/tree-sitter-json")
-        (make "https://github.com/alemuller/tree-sitter-make")
-        (markdown "https://github.com/ikatyang/tree-sitter-markdown")
-        (python "https://github.com/tree-sitter/tree-sitter-python")
-        (toml "https://github.com/tree-sitter/tree-sitter-toml")
-        (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-        (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+(use-package treesit
+  :preface
+  (defun tyler/treesit-install-grammars ()
+    "Install Tree-sitter grammars if they are absent."
+    (interactive)
+    (dolist (grammar
+             '((javascript . ("https://github.com/tree-sitter/tree-sitter-javascript" "master" "src"))
+               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+               (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src"))
+               (python "https://github.com/tree-sitter/tree-sitter-python")
+               (go "https://github.com/tree-sitter/tree-sitter-go")
+               (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+               (css "https://github.com/tree-sitter/tree-sitter-css")
+               (html "https://github.com/tree-sitter/tree-sitter-html")
+               (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+               (toml "https://github.com/tree-sitter/tree-sitter-toml")
+               (json "https://github.com/tree-sitter/tree-sitter-json")
+               (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+      (add-to-list 'treesit-language-source-alist grammar)
+      ;; Only install `grammar' if we don't already have it
+      ;; installed. However, if you want to *update* a grammar then
+      ;; this obviously prevents that from happening.
+      (unless (treesit-language-available-p (car grammar))
+        (treesit-install-language-grammar (car grammar)))))
+  :config
+  (tyler/treesit-install-grammars))
 
 (use-package dash-at-point
   :ensure t)
