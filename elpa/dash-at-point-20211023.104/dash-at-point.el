@@ -4,8 +4,6 @@
 ;; Author:  Shinji Tanaka <shinji.tanaka@gmail.com>
 ;; Created: 17 Feb 2013
 ;; Version: 0.0.5
-;; Package-Version: 20211023.104
-;; Package-Commit: fba1a6f42ea51d05110e12c62bdced664059eb55
 ;; URL: https://github.com/stanaka/dash-at-point
 ;;
 ;; This file is NOT part of GNU Emacs.

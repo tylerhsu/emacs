@@ -5,100 +5,92 @@
 
 ;;; Code:
 
-(setq byte-compile-warnings '(cl-functions))
-
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
+
+; Add :defer t to use-package expressions by default
+(setq use-package-always-defer t)
+
+; URLs that will be used when treesit-install-language-grammar is invoked.
+; From https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
+(setq treesit-language-source-alist
+      '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+        (cmake "https://github.com/uyha/tree-sitter-cmake")
+        (css "https://github.com/tree-sitter/tree-sitter-css")
+        (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+        (go "https://github.com/tree-sitter/tree-sitter-go")
+        (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+        (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+        (html "https://github.com/tree-sitter/tree-sitter-html")
+        (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+        (json "https://github.com/tree-sitter/tree-sitter-json")
+        (make "https://github.com/alemuller/tree-sitter-make")
+        (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+        (python "https://github.com/tree-sitter/tree-sitter-python")
+        (toml "https://github.com/tree-sitter/tree-sitter-toml")
+        (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+        (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 
 (use-package dash-at-point
   :ensure t)
 
 (use-package eglot
-  :ensure t
   :config
   (setq eglot-events-buffer-size 0)
-  ;; https://github.com/joaotavora/eglot/discussions/898
-  ;; show docs and diagnostics both at once in echo area when hovering
-  (add-hook 'eglot-managed-mode-hook
-            (lambda ()
-              ;; Show flymake diagnostics first.
-              (setq eldoc-documentation-functions
-                    (cons #'flymake-eldoc-function
-                          (remove #'flymake-eldoc-function eldoc-documentation-functions)))
-              ;; Show all eldoc feedback.
-              (setq eldoc-documentation-strategy #'eldoc-documentation-compose))))
+  (add-to-list 'eglot-server-programs '(vue-mode . ("vls" "--stdio")))
+  (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+  :hook ((tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-mode) . #'eglot-ensure))
 
-(use-package tree-sitter
+(use-package flymake
+  :bind (("C-c f l" . flymake-show-buffer-diagnostics)
+         ("C-c f n" . flymake-goto-next-error)
+         ("C-c f p" . flymake-goto-prev-error)))
+
+(use-package yaml-ts-mode
+  :mode "\\.ya?ml\\'")
+
+(use-package flymake-eslint
   :ensure t
-  :config
-  (use-package tree-sitter-langs :ensure t)
-  ;; activate tree-sitter on any buffer containing code for which it has a parser available
-  (global-tree-sitter-mode)
-  ;; use tree-sitter for syntax highlighting
-  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+  :hook ((tsx-ts-mode typescript-ts-mode js-ts-mode) . (lambda ()
+                                                         (when (not (eq buffer-file-name nil))
+                                                           (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js")))
+                                                         ; It would make the most sense to call (flymake-eslint-enable) here,
+                                                         ; but some interaction with eglot makes that fail. This is a workaround.
+                                                         ; https://github.com/orzechowskid/flymake-eslint/issues/23
+                                                         (add-hook 'eglot-managed-mode-hook (lambda ()
+                                                                                              (flymake-eslint-enable))))))
 
-(use-package yaml-mode
-  :ensure t
-  :commands yaml-mode)
+(use-package tsx-ts-mode
+  :mode "\\.[jt]sx\\'")
 
-(defun my-maybe-set-eslint-project-root ()
-  "Set flymake-eslint-project-root if possible"
-  (when (not (eq buffer-file-name nil))
-    (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js"))))
+(use-package typescript-ts-mode
+  :mode "\\.ts\\'")
 
-(use-package typescript-mode
-  :after (tree-sitter eglot)
-  :init
-  ;; The particular name typescriptreact-mode is necessary to get
-  ;; eglot to send the correct languageId to the lsp server.  See
-  ;; https://github.com/joaotavora/eglot/issues/624.  Without this,
-  ;; tsx is not recognized, so you get millions of diagnostic errors
-  ;; from the lsp server wherever there is tsx in the file.
-  (define-derived-mode typescriptreact-mode typescript-mode "TypeScript TSX")
-  ;; tree-sitter-based indentation for typescript/tsx
-  ;; not on melpa, so I've installed it in .emacs.d/site-lisp
-  ;; https://github.com/orzechowskid/tsi.el/
-  (use-package tsi-typescript :load-path "site-lisp")
-  ;; Have flymake report eslint diagnostics
-  ;; https://github.com/orzechowskid/flymake-eslint
-  (use-package flymake-eslint :ensure t)
-  :config
-  (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx))
-  :mode ("\\.[jt]sx?\\'" . typescriptreact-mode)
-  :hook (typescript-mode . (lambda()
-                             (eglot-ensure)
-                             ;; Enable flymake-eslint. Getting this to work required an edit to flymake-eslint.el.
-                             ;; https://github.com/orzechowskid/flymake-eslint/issues/23
-                             (my-maybe-set-eslint-project-root)
-                             (flymake-eslint-enable)
-                             (tsi-typescript-mode)
-                             (subword-mode))))
+(use-package js-ts-mode
+  :mode "\\.js\\'")
 
 (use-package vue-mode
-  :after eglot
   :ensure t
-  :config
-  (add-to-list 'eglot-server-programs '(vue-mode . ("vls" "--stdio")))
   :hook (vue-mode . (lambda()
-                      (eglot-ensure)
                       (set-face-background 'mmm-default-submode-face nil))))
 
-(use-package python-mode
-  :after eglot
-  :commands python-mode
-  :hook (python-mode . eglot-ensure))
+(use-package python-ts-mode
+  :mode "\\.py\\'")
+
+(use-package css-ts-mode
+  :mode "\\.[s]css\\'")
+
+(use-package json-ts-mode
+  :mode "\\.json\\'")
 
 (use-package svelte-mode
-  :after eglot
   :ensure t
-  :config
-  (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
-  :hook (svelte-mode . eglot-ensure))
+  :mode "\\.svelte\\'")
 
-(use-package go-mode
-  :ensure t
-  :hook (go-mode . eglot-ensure))
+(use-package go-ts-mode
+  :mode "\\.go\\'")
 
 ;; (use-package company
 ;;   :ensure t
@@ -134,16 +126,11 @@
   :bind (("C-x p f" . helm-projectile)
          ("C-x p s" . helm-projectile-ack)))
 
-(use-package dockerfile-mode
-  :ensure t
-  :mode "Dockerfile\\'")
+(use-package dockerfile-ts-mode
+  :mode "Dockerfile")
 
 (use-package expand-region
   :ensure t)
-
-(use-package yasnippet
-  :ensure t
-  :init (yas-global-mode 1))
 
 (use-package ace-jump-mode
   :ensure t)
@@ -155,13 +142,13 @@
   :hook (restclient-mode . (lambda()
                              (setq-local tab-width 2))))
 
-;; electric indent mode indents both the new line and the previous line when
-;; you press enter. Indent only the new line.
 (use-package prog-mode
-  :init
-  (electric-indent-mode 0)
   :bind ("RET" . 'electric-newline-and-maybe-indent)
   :hook (prog-mode . (lambda()
+                       ;; electric indent mode indents both the new line and the previous line when
+                       ;; you press enter. Indent only the new line.
+                       (electric-indent-mode 0)
+                       (subword-mode)
                        (setq-local tab-width 2))))
 
 ;; EasyPG
@@ -169,11 +156,6 @@
   :init
   (setq epa-pinentry-mode 'loopback)
   (setq epa-file-cache-passphrase-for-symmetric-encryption t))
-
-(use-package flymake
-  :bind (("C-c f l" . flymake-show-buffer-diagnostics)
-         ("C-c f n" . flymake-goto-next-error)
-         ("C-c f b" . flymake-goto-prev-error)))
 
 ;; Display
 
@@ -208,16 +190,6 @@
       (transpose-lines 1))
     (forward-line)
     (move-to-column col)))
-
-(defun duplicate-line()
-  "Duplicate the line at point."
-  (interactive)
-  (move-beginning-of-line 1)
-  (kill-line)
-  (yank)
-  (open-line 1)
-  (forward-line 1)
-  (yank))
 
 (defun tyler/swap-windows (&optional other-win)
   "Swap the buffers displayed in the current window and OTHER-WIN.
@@ -270,15 +242,13 @@ keeping it because it's the first real command I wrote!"
       (command-execute 'tyler/reb-query-replace)
     (command-execute 'query-replace)))
 
-;; Minor modes
-
 ;; my key bindings
 (defvar my-keys-minor-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-z") 'undo)
     (define-key map (kbd "C-c p") 'my-move-line-up)
     (define-key map (kbd "C-c n") 'my-move-line-down)
-    (define-key map (kbd "C-c j") 'duplicate-line)
+    (define-key map (kbd "C-c j") 'duplicate-dwim)
     (define-key map (kbd "C-c ;") 'comment-or-uncomment-region)
     (define-key map (kbd "C-l") 'goto-line)
     (define-key map (kbd "<up>") 'scroll-down-line)
@@ -302,6 +272,7 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "C-h a") 'helm-apropos)
     (define-key map (kbd "C-h z") 'shortdoc-display-group)
     (define-key map (kbd "M-%") 'tyler/query-replace)
+    (define-key map (kbd "C-c r") 're-builder)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
@@ -372,6 +343,86 @@ keeping it because it's the first real command I wrote!"
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(connection-local-criteria-alist
+   '(((:application tramp :machine "localhost")
+      tramp-connection-local-darwin-ps-profile)
+     ((:application tramp :machine "Tylers-MacBook-Pro.local")
+      tramp-connection-local-darwin-ps-profile)
+     ((:application tramp)
+      tramp-connection-local-default-system-profile tramp-connection-local-default-shell-profile)))
+ '(connection-local-profile-alist
+   '((tramp-connection-local-darwin-ps-profile
+      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state=abcde" "-o" "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (euid . number)
+       (user . string)
+       (egid . number)
+       (comm . 52)
+       (state . 5)
+       (ppid . number)
+       (pgrp . number)
+       (sess . number)
+       (ttname . string)
+       (tpgid . number)
+       (minflt . number)
+       (majflt . number)
+       (time . tramp-ps-time)
+       (pri . number)
+       (nice . number)
+       (vsize . number)
+       (rss . number)
+       (etime . tramp-ps-time)
+       (pcpu . number)
+       (pmem . number)
+       (args)))
+     (tramp-connection-local-busybox-ps-profile
+      (tramp-process-attributes-ps-args "-o" "pid,user,group,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "stat=abcde" "-o" "ppid,pgid,tty,time,nice,etime,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (user . string)
+       (group . string)
+       (comm . 52)
+       (state . 5)
+       (ppid . number)
+       (pgrp . number)
+       (ttname . string)
+       (time . tramp-ps-time)
+       (nice . number)
+       (etime . tramp-ps-time)
+       (args)))
+     (tramp-connection-local-bsd-ps-profile
+      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,euid,user,egid,egroup,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state,ppid,pgid,sid,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etimes,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (euid . number)
+       (user . string)
+       (egid . number)
+       (group . string)
+       (comm . 52)
+       (state . string)
+       (ppid . number)
+       (pgrp . number)
+       (sess . number)
+       (ttname . string)
+       (tpgid . number)
+       (minflt . number)
+       (majflt . number)
+       (time . tramp-ps-time)
+       (pri . number)
+       (nice . number)
+       (vsize . number)
+       (rss . number)
+       (etime . number)
+       (pcpu . number)
+       (pmem . number)
+       (args)))
+     (tramp-connection-local-default-shell-profile
+      (shell-file-name . "/bin/sh")
+      (shell-command-switch . "-c"))
+     (tramp-connection-local-default-system-profile
+      (path-separator . ":")
+      (null-device . "/dev/null"))))
  '(css-indent-offset 2)
  '(dabbrev-case-distinction nil)
  '(dabbrev-case-fold-search t)

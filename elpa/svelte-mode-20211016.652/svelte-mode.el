@@ -4,8 +4,6 @@
 ;; Author: Leaf <leafvocation@gmail.com>
 ;; Created: 21 Jan 2020
 ;; Keywords: wp languages
-;; Package-Version: 20211016.652
-;; Package-Commit: 6a1d4274af7f4c0f271f77bd96678c3dd1fa68e1
 ;; Homepage: https://github.com/leafOfTree/svelte-mode
 ;; Version: 1.0.5
 ;; Package-Requires: ((emacs "26.1"))
