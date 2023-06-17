@@ -39,6 +39,30 @@
   :config
   (tyler/treesit-install-grammars))
 
+(use-package avy
+  :ensure t
+  :bind
+  (("C-c C-j" . avy-goto-char-timer))
+  :config
+  (setq avy-background t)
+  :custom-face
+  (avy-lead-face ((t (:foreground "#e52b50" :background "unset"))))
+  (avy-lead-face-0 ((t (:foreground "#e52b50" :background "unset"))))
+  (avy-lead-face-1 ((t (:foreground "#e52b50" :background "unset"))))
+  (avy-lead-face-2 ((t (:foreground "#e52b50" :background "unset"))))
+  (avy-goto-char-timer-face ((t (:foreground "black")))))
+
+(use-package combobulate
+  :commands combobulate-mode
+  :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode) . (lambda ()
+                                                                                                 (combobulate-mode)
+                                                                                                 (advice-add 'er/expand-region :override #'combobulate-mark-node-dwim)))
+  :bind
+  (:map combobulate-proffer-map
+        ("SPC" . 'next)
+        ("p" . 'prev))
+  :load-path ("site-lisp/combobulate"))
+
 (use-package dash-at-point
   :ensure t)
 
@@ -86,7 +110,7 @@
   :mode "\\.py\\'")
 
 (use-package css-ts-mode
-  :mode "\\.[s]css\\'")
+  :mode "\\.s?css\\'")
 
 (use-package json-ts-mode
   :mode "\\.json\\'")
@@ -110,6 +134,8 @@
   :ensure t
   :config
   (helm-mode 1)
+  (setq helm-split-window-default-side 'other)
+  (setq helm-split-window-other-side-when-one-window 'right)
   (setq helm-buffer-max-length 50)
   (setq helm-buffers-fuzzy-matching t)
   :bind (("M-y" . helm-show-kill-ring)
@@ -136,9 +162,6 @@
   :mode "Dockerfile")
 
 (use-package expand-region
-  :ensure t)
-
-(use-package ace-jump-mode
   :ensure t)
 
 (use-package restclient
@@ -271,7 +294,6 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "M-.") 'xref-find-definitions)
     (define-key map (kbd "M-?") 'xref-find-references)
     (define-key map (kbd "M-,") 'xref-pop-marker-stack)
-    (define-key map (kbd "C-c C-j") 'ace-jump-mode)
     (define-key map (kbd "C-c C-o") 'helm-occur)
     (define-key map (kbd "C-c s") 'window-swap-states)
     (define-key map (kbd "C-c d") 'dash-at-point)
@@ -447,7 +469,7 @@ keeping it because it's the first real command I wrote!"
  '(org-agenda-files
    '("~/notes/sencap.org.gpg" "/Users/tyler/notes/ebcs.org.gpg" "/Users/tyler/notes/pittbos.org.gpg"))
  '(package-selected-packages
-   '(helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-flymake-command nil)
