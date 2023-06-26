@@ -41,8 +41,6 @@
 
 (use-package avy
   :ensure t
-  :bind
-  (("C-c C-j" . avy-goto-char-timer))
   :config
   (setq avy-background t)
   :custom-face
@@ -54,13 +52,13 @@
 
 (use-package combobulate
   :commands combobulate-mode
-  :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode) . (lambda ()
-                                                                                                 (combobulate-mode)
-                                                                                                 (advice-add 'er/expand-region :override #'combobulate-mark-node-dwim)))
+  :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode) . #'combobulate-mode)
   :bind
   (:map combobulate-proffer-map
         ("SPC" . 'next)
         ("p" . 'prev))
+  :config
+  (setopt combobulate-beginning-of-defun-behavior 'self-and-sibling-first)
   :load-path ("site-lisp/combobulate"))
 
 (use-package dash-at-point
@@ -120,7 +118,9 @@
   :mode "\\.svelte\\'")
 
 (use-package go-ts-mode
-  :mode "\\.go\\'")
+  :mode "\\.go\\'"
+  :config
+  (setq go-ts-mode-indent-offset 2))
 
 ;; (use-package company
 ;;   :ensure t
@@ -138,12 +138,16 @@
   (setq helm-split-window-other-side-when-one-window 'right)
   (setq helm-buffer-max-length 50)
   (setq helm-buffers-fuzzy-matching t)
-  :bind (("M-y" . helm-show-kill-ring)
-         ("M-x" . helm-M-x)
-         ("C-x C-f" . helm-find-files)
-         ("C-x b" . helm-mini)
-         ("C-h SPC" . helm-all-mark-rings)
-         ("C-c C-o" . helm-occur)))
+  :bind
+  (("M-y" . helm-show-kill-ring)
+   ("M-x" . helm-M-x)
+   ("C-x C-f" . helm-find-files)
+   ("C-x b" . helm-mini)
+   ("C-h SPC" . helm-all-mark-rings)
+   ("C-c C-o" . helm-occur)
+   :map helm-map
+   ("<up>" . previous-history-element)
+   ("<down>" . next-history-element)))
 
 (use-package projectile
   :ensure t
@@ -253,23 +257,11 @@ keeping it because it's the first real command I wrote!"
     (select-window other-win)
     (switch-to-buffer current-buf)))
 
-(defun tyler/reb-query-replace (to-string)
-  "Replace current re-builder RE from point with `query-replace-regexp'."
-  (interactive
-   (progn (barf-if-buffer-read-only)
-          (list (query-replace-read-to (reb-target-binding reb-regexp)
-                                       "Query replace"  t))))
-  (with-current-buffer reb-target-buffer
-    (if (looking-back (reb-target-binding reb-regexp))
-        (re-search-backward (reb-target-binding reb-regexp) nil t))
-    (query-replace-regexp (reb-target-binding reb-regexp) to-string)))
-
-(defun tyler/query-replace ()
-  "Invoke the `query-replace' command, or, if the re-builder buffer is open, call `query-replace-regexp' with the current re-builder regexp as the REGEXP argument."
+(defun tyler/expand-region ()
   (interactive)
-  (if (get-buffer-window reb-buffer)
-      (command-execute 'tyler/reb-query-replace)
-    (command-execute 'query-replace)))
+  (if (and (boundp combobulate-mode) combobulate-mode)
+      (command-execute 'combobulate-mark-node-dwim)
+    (command-execute 'er/expand-region)))
 
 ;; my key bindings
 (defvar my-keys-minor-mode-map
@@ -286,7 +278,7 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "C-c C-p") 'mc/mark-previous-like-this)
     (define-key map (kbd "C-c C-l") 'mc/edit-lines)
     (define-key map (kbd "C-c =") 'mc/mark-all-like-this)
-    (define-key map (kbd "C-c SPC") 'er/expand-region)
+    (define-key map (kbd "C-c SPC") 'tyler/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
     (define-key map (kbd "C-c /") 'completion-at-point)
@@ -299,8 +291,8 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "C-c d") 'dash-at-point)
     (define-key map (kbd "C-h a") 'helm-apropos)
     (define-key map (kbd "C-h z") 'shortdoc-display-group)
-    (define-key map (kbd "M-%") 'tyler/query-replace)
     (define-key map (kbd "C-c r") 're-builder)
+    (define-key map (kbd "C-c C-j") 'avy-goto-char)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
