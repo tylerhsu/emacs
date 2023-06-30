@@ -18,6 +18,7 @@
 
 (setq mc/cmds-to-run-once
       '(
+        beginning-of-buffer
         comint-delchar-or-maybe-eof
         comment-dwim
         electric-newline-and-maybe-indent

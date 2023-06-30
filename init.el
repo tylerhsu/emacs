@@ -57,6 +57,8 @@
   (:map combobulate-proffer-map
         ("SPC" . 'next)
         ("p" . 'prev))
+  (:map tsx-ts-mode-map
+        ("=" . 'self-insert-command)) ; get rid of automatic quote insertion TODO this doesn't work
   :config
   (setopt combobulate-beginning-of-defun-behavior 'self-and-sibling-first)
   :load-path ("site-lisp/combobulate"))
@@ -102,6 +104,16 @@
 (use-package vue-mode
   :ensure t
   :hook (vue-mode . (lambda()
+                      ; vue-mode's indent region function,
+                      ; vue-mmm-indent-region, indents the whole
+                      ; submode area no matter what the region
+                      ; is. Turn that off.
+                      (setq-local indent-region-function #'indent-region-line-by-line)
+                      ; vue-mode's indent line function,
+                      ; vue-mmm-indent-line-narrowed, indents the
+                      ; first node in <template> to column 0 when it
+                      ; should be at 2. Turn that off.
+                      (setq-local mmm-indent-line-function #'mmm-indent-line)
                       (set-face-background 'mmm-default-submode-face nil))))
 
 (use-package python-ts-mode
@@ -134,8 +146,7 @@
   :ensure t
   :config
   (helm-mode 1)
-  (setq helm-split-window-default-side 'other)
-  (setq helm-split-window-other-side-when-one-window 'right)
+  (setq helm-split-window-default-side 'right)
   (setq helm-buffer-max-length 50)
   (setq helm-buffers-fuzzy-matching t)
   :bind
@@ -149,18 +160,18 @@
    ("<up>" . previous-history-element)
    ("<down>" . next-history-element)))
 
-(use-package projectile
-  :ensure t
-  :config
-  (projectile-mode)
-  (setq projectile-completion-system 'helm))
+;; (use-package projectile
+;;   :ensure t
+;;   :config
+;;   (projectile-mode)
+;;   (setq projectile-completion-system 'helm))
 
-(use-package helm-projectile
-  :ensure t
-  :config
-  (helm-projectile-on)
-  :bind (("C-x p f" . helm-projectile)
-         ("C-x p s" . helm-projectile-ack)))
+;; (use-package helm-projectile
+;;   :ensure t
+;;   :config
+;;   (helm-projectile-on)
+;;   :bind (("C-x p f" . helm-projectile)
+;;          ("C-x p s" . helm-projectile-ack)))
 
 (use-package dockerfile-ts-mode
   :mode "Dockerfile")
@@ -189,6 +200,14 @@
   :init
   (setq epa-pinentry-mode 'loopback)
   (setq epa-file-cache-passphrase-for-symmetric-encryption t))
+
+(use-package markdown-mode
+  :ensure t)
+
+(use-package org-mode
+  :init
+  (setopt org-agenda-files '("/Users/tyler/Dropbox/notes"))
+  (setopt org-agenda-file-regexp "\\`[^.].*\\.org\\(\\.gpg\\)?\\'"))
 
 ;; Display
 
@@ -262,6 +281,11 @@ keeping it because it's the first real command I wrote!"
   (if (and (boundp combobulate-mode) combobulate-mode)
       (command-execute 'combobulate-mark-node-dwim)
     (command-execute 'er/expand-region)))
+
+(defun tyler/transpose-table ()
+  (interactive)
+  (command-execute 'org-table-create-or-convert-from-region)
+  (command-execute 'org-table-transpose-table-at-point))
 
 ;; my key bindings
 (defvar my-keys-minor-mode-map
@@ -458,10 +482,8 @@ keeping it because it's the first real command I wrote!"
  '(helm-recentf-fuzzy-match t)
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
- '(org-agenda-files
-   '("~/notes/sencap.org.gpg" "/Users/tyler/notes/ebcs.org.gpg" "/Users/tyler/notes/pittbos.org.gpg"))
  '(package-selected-packages
-   '(avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-flymake-command nil)
