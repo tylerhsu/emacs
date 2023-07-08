@@ -5,6 +5,7 @@
       '(
         dabbrev-expand
         delete-horizontal-space
+        helm-M-x
         indent-for-tab-command
         kill-region
         org-self-insert-command

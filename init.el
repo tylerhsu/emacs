@@ -53,14 +53,12 @@
 (use-package combobulate
   :commands combobulate-mode
   :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode) . #'combobulate-mode)
-  :bind
-  (:map combobulate-proffer-map
-        ("SPC" . 'next)
-        ("p" . 'prev))
-  (:map tsx-ts-mode-map
-        ("=" . 'self-insert-command)) ; get rid of automatic quote insertion TODO this doesn't work
+  :bind (:map combobulate-proffer-map
+              ("SPC" . 'next)
+              ("p" . 'prev))
   :config
   (setopt combobulate-beginning-of-defun-behavior 'self-and-sibling-first)
+  (setopt combobulate-js-ts-enable-attribute-envelopes nil) ; don't auto-insert quotes after = is typed
   :load-path ("site-lisp/combobulate"))
 
 (use-package dash-at-point
@@ -68,7 +66,7 @@
 
 (use-package eglot
   :config
-  (setq eglot-events-buffer-size 0)
+  (setopt eglot-events-buffer-size 0)
   (add-to-list 'eglot-server-programs '(vue-mode . ("vls" "--stdio")))
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
   :hook ((tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-mode) . #'eglot-ensure))
@@ -209,6 +207,57 @@
   (setopt org-agenda-files '("/Users/tyler/Dropbox/notes"))
   (setopt org-agenda-file-regexp "\\`[^.].*\\.org\\(\\.gpg\\)?\\'"))
 
+(use-package eldoc
+  :preface
+  (defun tyler/set-max-eldoc-height-then-display (oldfunc &rest args)
+    "Wrap `eldoc-display-in-echo-area' such that it displays multiline
+docs but never pops up in a way that causes the window to
+scroll. Such scrolling happens when the echo area grows enough to
+occupy the row at point. Prevent it by setting the maximum eldoc
+height no greater than point's distance from window bottom."
+    (let* ((point-y (cdr (posn-x-y (posn-at-point))))
+           (point-height (-
+                          (window-height)
+                          (window-mode-line-height)
+                          (window-height (minibuffer-window))
+                          point-y))
+           (available (min (1+ point-height) 10))
+           (old max-mini-window-height))
+      (setq-default max-mini-window-height available)
+      (apply oldfunc args)
+      (setq-default max-mini-window-height old)))
+  (defun tyler/eldoc--echo-area-substring (available)
+    "Override `eldoc--echo-area-substring' so it uses visual lines
+instead of buffer lines."
+    (let ((start (prog1 (progn
+                          (goto-char (point-min))
+                          (skip-chars-forward " \t\n")
+                          (point))
+                   (line-move-visual (1- available) t)
+                   (end-of-visual-line)
+                   (goto-char (1- (point)))))
+          (truncated (save-excursion
+                       (goto-char (1+ (point)))
+                       (skip-chars-forward " \t\n")
+                       (not (eobp)))))
+      (cond ((eldoc--echo-area-prefer-doc-buffer-p truncated)
+             nil)
+            ((and truncated
+                  (> available 1)
+                  eldoc-echo-area-display-truncation-message)
+             (line-move-visual -1 t)
+             (end-of-visual-line)
+             (concat (buffer-substring start (point))
+                     (format
+                      "\n(Documentation truncated. Use `%s' to see rest)"
+                      (substitute-command-keys "\\[eldoc-doc-buffer]"))))
+            (t
+             (buffer-substring start (point))))))
+  :config
+  (setopt eldoc-echo-area-prefer-doc-buffer t)
+  (advice-add 'eldoc-display-in-echo-area :around 'tyler/set-max-eldoc-height-then-display)
+  (advice-add 'eldoc--echo-area-substring :override 'tyler/eldoc--echo-area-substring))
+
 ;; Display
 
 ;; remove toolbar, menu bar
@@ -278,7 +327,7 @@ keeping it because it's the first real command I wrote!"
 
 (defun tyler/expand-region ()
   (interactive)
-  (if (and (boundp combobulate-mode) combobulate-mode)
+  (if (and (boundp 'combobulate-mode) combobulate-mode)
       (command-execute 'combobulate-mark-node-dwim)
     (command-execute 'er/expand-region)))
 
@@ -483,7 +532,7 @@ keeping it because it's the first real command I wrote!"
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
  '(package-selected-packages
-   '(markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(eldoc-box markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-flymake-command nil)
