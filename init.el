@@ -12,6 +12,12 @@
 ; Add :defer t to use-package expressions by default
 (setq use-package-always-defer t)
 
+; Make garbage collection trigger less often
+(setq gc-cons-threshold (* 1024 1024 1024))
+
+; Increase chunk size when reading from subprocesses
+(setq read-process-output-max (* 1024 1024))
+
 (use-package treesit
   :preface
   (defun tyler/treesit-install-grammars ()
@@ -29,6 +35,7 @@
                (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
                (toml "https://github.com/tree-sitter/tree-sitter-toml")
                (json "https://github.com/tree-sitter/tree-sitter-json")
+               (vue "https://github.com/ikatyang/tree-sitter-vue")
                (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
       (add-to-list 'treesit-language-source-alist grammar)
       ;; Only install `grammar' if we don't already have it
@@ -67,9 +74,9 @@
 (use-package eglot
   :config
   (setopt eglot-events-buffer-size 0)
-  (add-to-list 'eglot-server-programs '(vue-mode . ("vls" "--stdio")))
+  (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
-  :hook ((tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-mode) . #'eglot-ensure))
+  :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure))
 
 (use-package flymake
   :bind (("C-c f l" . flymake-show-buffer-diagnostics)
@@ -81,7 +88,7 @@
 
 (use-package flymake-eslint
   :ensure t
-  :hook ((tsx-ts-mode typescript-ts-mode js-ts-mode) . (lambda ()
+  :hook ((tsx-ts-mode typescript-ts-mode js-ts-mode vue-ts-mode) . (lambda ()
                                                          (when (not (eq buffer-file-name nil))
                                                            (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js")))
                                                          ; It would make the most sense to call (flymake-eslint-enable) here,
@@ -99,20 +106,9 @@
 (use-package js-ts-mode
   :mode "\\.js\\'")
 
-(use-package vue-mode
-  :ensure t
-  :hook (vue-mode . (lambda()
-                      ; vue-mode's indent region function,
-                      ; vue-mmm-indent-region, indents the whole
-                      ; submode area no matter what the region
-                      ; is. Turn that off.
-                      (setq-local indent-region-function #'indent-region-line-by-line)
-                      ; vue-mode's indent line function,
-                      ; vue-mmm-indent-line-narrowed, indents the
-                      ; first node in <template> to column 0 when it
-                      ; should be at 2. Turn that off.
-                      (setq-local mmm-indent-line-function #'mmm-indent-line)
-                      (set-face-background 'mmm-default-submode-face nil))))
+(use-package vue-ts-mode
+  :mode "\\.vue\\'"
+  :load-path ("site-lisp/vue-ts-mode"))
 
 (use-package python-ts-mode
   :mode "\\.py\\'")
@@ -132,10 +128,13 @@
   :config
   (setq go-ts-mode-indent-offset 2))
 
-;; (use-package company
-;;   :ensure t
-;;   :bind ("M-/" . company-complete)
-;;   :hook (eglot-mode . company-mode))
+(use-package company
+  :ensure t
+  :bind ("M-/" . company-complete)
+  :config
+  (setq company-idle-delay 0.0)
+  (setq global-company-mode 1))
+  ;; :hook (eglot-mode . company-mode))
 
 (use-package multiple-cursors
   :ensure t)
@@ -157,19 +156,6 @@
    :map helm-map
    ("<up>" . previous-history-element)
    ("<down>" . next-history-element)))
-
-;; (use-package projectile
-;;   :ensure t
-;;   :config
-;;   (projectile-mode)
-;;   (setq projectile-completion-system 'helm))
-
-;; (use-package helm-projectile
-;;   :ensure t
-;;   :config
-;;   (helm-projectile-on)
-;;   :bind (("C-x p f" . helm-projectile)
-;;          ("C-x p s" . helm-projectile-ack)))
 
 (use-package dockerfile-ts-mode
   :mode "Dockerfile")
@@ -215,7 +201,7 @@ docs but never pops up in a way that causes the window to
 scroll. Such scrolling happens when the echo area grows enough to
 occupy the row at point. Prevent it by setting the maximum eldoc
 height no greater than point's distance from window bottom."
-    (let* ((point-y (cdr (posn-x-y (posn-at-point))))
+    (let* ((point-y (or (cdr (posn-x-y (posn-at-point))) 0))
            (point-height (-
                           (window-height)
                           (window-mode-line-height)
@@ -532,7 +518,7 @@ keeping it because it's the first real command I wrote!"
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
  '(package-selected-packages
-   '(eldoc-box markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(vue-ts-mode eldoc-box markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-flymake-command nil)

@@ -6,6 +6,8 @@
         dabbrev-expand
         delete-horizontal-space
         helm-M-x
+        helm-find-files
+        helm-show-kill-ring
         indent-for-tab-command
         kill-region
         org-self-insert-command
@@ -13,6 +15,7 @@
         rjsx-delete-creates-full-tag
         rjsx-electric-gt
         tabbar-backward-tab
+        xterm-paste
         yaml-electric-backspace
         yaml-electric-bar-and-angle
         ))
