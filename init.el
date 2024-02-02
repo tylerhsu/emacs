@@ -13,10 +13,13 @@
 (setq use-package-always-defer t)
 
 ; Make garbage collection trigger less often
-(setq gc-cons-threshold (* 1024 1024 1024))
+(setq gc-cons-threshold (* 1024 1024 2))
 
 ; Increase chunk size when reading from subprocesses
 (setq read-process-output-max (* 1024 1024))
+
+; Defer fontification while there is input pending
+(setq jit-lock-defer-time 0)
 
 (use-package treesit
   :preface
@@ -113,6 +116,10 @@
 (use-package python-ts-mode
   :mode "\\.py\\'")
 
+(use-package html-ts-mode
+  :mode "\\.html\\'"
+  :load-path ("site-lisp/html-ts-mode"))
+
 (use-package css-ts-mode
   :mode "\\.s?css\\'")
 
@@ -130,10 +137,11 @@
 
 (use-package company
   :ensure t
+  :defer nil
   :bind ("M-/" . company-complete)
   :config
   (setq company-idle-delay 0.0)
-  (setq global-company-mode 1))
+  (global-company-mode))
   ;; :hook (eglot-mode . company-mode))
 
 (use-package multiple-cursors
@@ -518,7 +526,7 @@ keeping it because it's the first real command I wrote!"
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
  '(package-selected-packages
-   '(vue-ts-mode eldoc-box markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(company-jedi vue-ts-mode eldoc-box markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-flymake-command nil)
