@@ -140,8 +140,8 @@
   :defer nil
   :bind ("M-/" . company-complete)
   :config
-  (setq company-idle-delay 0.0)
-  (global-company-mode))
+  (setq company-idle-delay 0.2))
+  ;; (global-company-mode))
   ;; :hook (eglot-mode . company-mode))
 
 (use-package multiple-cursors
