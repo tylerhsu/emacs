@@ -19,7 +19,7 @@
 (setq read-process-output-max (* 1024 1024))
 
 ; Defer fontification while there is input pending
-(setq jit-lock-defer-time 0)
+;; (setq jit-lock-defer-time 0)
 
 (use-package treesit
   :preface
@@ -27,9 +27,10 @@
     "Install Tree-sitter grammars if they are absent."
     (interactive)
     (dolist (grammar
-             '((javascript . ("https://github.com/tree-sitter/tree-sitter-javascript" "master" "src"))
-               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-               (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src"))
+             ;; js, ts, and tsx are pinned because the immediate subsequent versions resulted in broken syntax highlighting.
+             '((javascript . ("https://github.com/tree-sitter/tree-sitter-javascript" "v0.20.1" "src"))
+               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "typescript/src")
+               (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "tsx/src"))
                (python "https://github.com/tree-sitter/tree-sitter-python")
                (go "https://github.com/tree-sitter/tree-sitter-go")
                (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
@@ -41,7 +42,7 @@
                (vue "https://github.com/ikatyang/tree-sitter-vue")
                (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
       (add-to-list 'treesit-language-source-alist grammar)
-      ;; Only install `grammar' if we don't already have it
+      ;; Only install `grammar' if we don't already have it≈
       ;; installed. However, if you want to *update* a grammar then
       ;; this obviously prevents that from happening.
       (unless (treesit-language-available-p (car grammar))
@@ -62,7 +63,7 @@
 
 (use-package combobulate
   :commands combobulate-mode
-  :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode) . #'combobulate-mode)
+  :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode vue-ts-mode) . #'combobulate-mode)
   :bind (:map combobulate-proffer-map
               ("SPC" . 'next)
               ("p" . 'prev))
@@ -74,12 +75,29 @@
 (use-package dash-at-point
   :ensure t)
 
+;; Had to apply the patch in https://github.com/joaotavora/eglot/discussions/1345
+;; to fix bug where hovering on a symbol in a typescript buffer would throw an error.
 (use-package eglot
+  :ensure t
   :config
   (setopt eglot-events-buffer-size 0)
   (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
   :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure))
+
+;; The following three expressions tell eglot how to locate tsconfig.json
+;; in a typescript project. This makes sure the buffer's typescript diagnostics
+;; are consistent with the project's configuration.
+(cl-defmethod project-root ((project (head eglot-project)))
+  (cdr project))
+
+(defun my-project-try-tsconfig-json (dir)
+  (when-let* ((found (locate-dominating-file dir "tsconfig.json")))
+    (cons 'eglot-project found)))
+
+(add-hook 'project-find-functions
+          'my-project-try-tsconfig-json nil nil)
+;; Done telling eglot how to locate tsconfig.json
 
 (use-package flymake
   :bind (("C-c f l" . flymake-show-buffer-diagnostics)
@@ -93,12 +111,14 @@
   :ensure t
   :hook ((tsx-ts-mode typescript-ts-mode js-ts-mode vue-ts-mode) . (lambda ()
                                                          (when (not (eq buffer-file-name nil))
-                                                           (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js")))
+                                                           (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js"))
+                                                           (setq-local flymake-eslint-executable-name (concat (locate-dominating-file buffer-file-name "node_modules") "node_modules/.bin/eslint")))
                                                          ; It would make the most sense to call (flymake-eslint-enable) here,
                                                          ; but some interaction with eglot makes that fail. This is a workaround.
                                                          ; https://github.com/orzechowskid/flymake-eslint/issues/23
                                                          (add-hook 'eglot-managed-mode-hook (lambda ()
-                                                                                              (flymake-eslint-enable))))))
+                                                                                              (when (executable-find "eslint")
+                                                                                                (flymake-eslint-enable)))))))
 
 (use-package tsx-ts-mode
   :mode "\\.[jt]sx\\'")
@@ -140,9 +160,8 @@
   :defer nil
   :bind ("M-/" . company-complete)
   :config
-  (setq company-idle-delay 0.2))
-  ;; (global-company-mode))
-  ;; :hook (eglot-mode . company-mode))
+  (setq company-idle-delay 0.2)
+  :hook (eglot-mode . company-mode))
 
 (use-package multiple-cursors
   :ensure t)
@@ -154,6 +173,7 @@
   (setq helm-split-window-default-side 'right)
   (setq helm-buffer-max-length 50)
   (setq helm-buffers-fuzzy-matching t)
+  (setq helm-move-to-line-cycle-in-source nil)
   :bind
   (("M-y" . helm-show-kill-ring)
    ("M-x" . helm-M-x)
@@ -188,6 +208,7 @@
                        (setq-local tab-width 2))))
 
 ;; EasyPG
+;; Requires `brew install gpg2`
 (use-package epa-file
   :init
   (setq epa-pinentry-mode 'loopback)
@@ -251,6 +272,10 @@ instead of buffer lines."
   (setopt eldoc-echo-area-prefer-doc-buffer t)
   (advice-add 'eldoc-display-in-echo-area :around 'tyler/set-max-eldoc-height-then-display)
   (advice-add 'eldoc--echo-area-substring :override 'tyler/eldoc--echo-area-substring))
+
+(use-package prisma-mode
+  :mode "\\.prisma\\'"
+  :load-path ("site-lisp/prisma-mode"))
 
 ;; Display
 
@@ -431,7 +456,11 @@ keeping it because it's the first real command I wrote!"
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(connection-local-criteria-alist
-   '(((:application tramp :machine "localhost")
+   '(((:application tramp :machine "Tylers-Laptop")
+      tramp-connection-local-darwin-ps-profile)
+     ((:application tramp :machine "Tylers-Laptop.local")
+      tramp-connection-local-darwin-ps-profile)
+     ((:application tramp :machine "localhost")
       tramp-connection-local-darwin-ps-profile)
      ((:application tramp :machine "Tylers-MacBook-Pro.local")
       tramp-connection-local-darwin-ps-profile)
@@ -526,7 +555,7 @@ keeping it because it's the first real command I wrote!"
  '(js-indent-level 2)
  '(js2-mode-show-parse-errors nil)
  '(package-selected-packages
-   '(company-jedi vue-ts-mode eldoc-box markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
+   '(emacs-prisma-mode eglot treesit company-jedi vue-ts-mode eldoc-box markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
  '(projectile-globally-ignored-directories
    '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
  '(python-flymake-command nil)
