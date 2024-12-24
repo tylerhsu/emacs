@@ -3,6 +3,7 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        combobulate-maybe-auto-close-tag
         dabbrev-expand
         delete-horizontal-space
         helm-M-x
@@ -10,11 +11,13 @@
         helm-show-kill-ring
         indent-for-tab-command
         kill-region
+        org-beginning-of-line
         org-self-insert-command
         repeat
         rjsx-delete-creates-full-tag
         rjsx-electric-gt
         tabbar-backward-tab
+        tyler/expand-region
         xterm-paste
         yaml-electric-backspace
         yaml-electric-bar-and-angle

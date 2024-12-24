@@ -61,42 +61,51 @@
   (avy-lead-face-2 ((t (:foreground "#e52b50" :background "unset"))))
   (avy-goto-char-timer-face ((t (:foreground "black")))))
 
-(use-package combobulate
-  :commands combobulate-mode
-  :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode vue-ts-mode) . #'combobulate-mode)
-  :bind (:map combobulate-proffer-map
-              ("SPC" . 'next)
-              ("p" . 'prev))
-  :config
-  (setopt combobulate-beginning-of-defun-behavior 'self-and-sibling-first)
-  (setopt combobulate-js-ts-enable-attribute-envelopes nil) ; don't auto-insert quotes after = is typed
-  :load-path ("site-lisp/combobulate"))
+;; (use-package combobulate
+;;   :commands combobulate-mode
+;;   :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode vue-ts-mode) . #'combobulate-mode)
+;;   :bind (:map combobulate-proffer-map
+;;               ("SPC" . 'next)
+;;               ("p" . 'prev))
+;;   :config
+;;   (setopt combobulate-beginning-of-defun-behavior 'self-and-sibling-first)
+;;   (setopt combobulate-js-ts-enable-attribute-envelopes nil) ; don't auto-insert quotes after = is typed
+;;   :load-path ("site-lisp/combobulate"))
 
 (use-package dash-at-point
   :ensure t)
 
+(defvar
+  eglot-modes
+  '(typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode)
+  "Modes that should use eglot. The same modes should also use company-mode, so store in a variable to avoid duplicating.")
+
 ;; Had to apply the patch in https://github.com/joaotavora/eglot/discussions/1345
 ;; to fix bug where hovering on a symbol in a typescript buffer would throw an error.
-(use-package eglot
-  :ensure t
-  :config
-  (setopt eglot-events-buffer-size 0)
-  (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
-  (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
-  :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure))
+(eval
+ `(use-package eglot
+    :ensure t
+    :config
+    (setopt eglot-events-buffer-size 0)
+    (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
+    (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+    :hook (,eglot-modes . #'eglot-ensure)))
 
+;;;;;; commented out - this breaks ignoring dirs with "C-x p f" and "C-x p g". Can't remember why I needed it, so experimenting till I rediscover that.
 ;; The following three expressions tell eglot how to locate tsconfig.json
 ;; in a typescript project. This makes sure the buffer's typescript diagnostics
 ;; are consistent with the project's configuration.
-(cl-defmethod project-root ((project (head eglot-project)))
-  (cdr project))
+;; (cl-defmethod project-root ((project (head eglot-project)))
+;;   (cdr project))
 
-(defun my-project-try-tsconfig-json (dir)
-  (when-let* ((found (locate-dominating-file dir "tsconfig.json")))
-    (cons 'eglot-project found)))
+;; (defun my-project-try-tsconfig-json (dir)
+;;   (when-let* ((found (locate-dominating-file dir "tsconfig.json")))
+;;     (cons 'eglot-project found)))
 
-(add-hook 'project-find-functions
-          'my-project-try-tsconfig-json nil nil)
+
+;; (with-eval-after-load "project" 
+;;   (add-hook 'project-find-functions
+;;             'my-project-try-tsconfig-json nil nil))
 ;; Done telling eglot how to locate tsconfig.json
 
 (use-package flymake
@@ -109,16 +118,19 @@
 
 (use-package flymake-eslint
   :ensure t
-  :hook ((tsx-ts-mode typescript-ts-mode js-ts-mode vue-ts-mode) . (lambda ()
-                                                         (when (not (eq buffer-file-name nil))
-                                                           (setq-local flymake-eslint-project-root (locate-dominating-file buffer-file-name ".eslintrc.js"))
-                                                           (setq-local flymake-eslint-executable-name (concat (locate-dominating-file buffer-file-name "node_modules") "node_modules/.bin/eslint")))
-                                                         ; It would make the most sense to call (flymake-eslint-enable) here,
-                                                         ; but some interaction with eglot makes that fail. This is a workaround.
-                                                         ; https://github.com/orzechowskid/flymake-eslint/issues/23
-                                                         (add-hook 'eglot-managed-mode-hook (lambda ()
-                                                                                              (when (executable-find "eslint")
-                                                                                                (flymake-eslint-enable)))))))
+  :hook ((tsx-ts-mode typescript-ts-mode js-ts-mode vue-ts-mode svelte-mode) . (lambda ()
+                                                                     (when (not (eq buffer-file-name nil))
+                                                                       (setq-local flymake-eslint-project-root (locate-dominating-file (buffer-file-name) (lambda (dir)
+                                                                                                                                                            (or (file-exists-p (expand-file-name ".eslintrc.js" dir))
+                                                                                                                                                                (file-exists-p (expand-file-name ".eslintrc.cjs" dir))
+                                                                                                                                                                (file-exists-p (expand-file-name ".eslintrc.json" dir))))))
+                                                                       (setq-local flymake-eslint-executable-name (concat (locate-dominating-file buffer-file-name "node_modules") "node_modules/.bin/eslint")))
+                                                                       ; It would make the most sense to call (flymake-eslint-enable) here,
+                                                                       ; but some interaction with eglot makes that fail. This is a workaround.
+                                                                       ; https://github.com/orzechowskid/flymake-eslint/issues/23
+                                                                       (add-hook 'eglot-managed-mode-hook (lambda ()
+                                                                                                            (when (file-exists-p (concat (locate-dominating-file buffer-file-name "node_modules") "node_modules/.bin/eslint"))
+                                                                                                              (flymake-eslint-enable)))))))
 
 (use-package tsx-ts-mode
   :mode "\\.[jt]sx\\'")
@@ -155,13 +167,14 @@
   :config
   (setq go-ts-mode-indent-offset 2))
 
-(use-package company
-  :ensure t
-  :defer nil
-  :bind ("M-/" . company-complete)
-  :config
-  (setq company-idle-delay 0.2)
-  :hook (eglot-mode . company-mode))
+(eval
+ `(use-package company
+    :ensure t
+    :defer nil
+    :bind ("M-/" . company-complete)
+    :config
+    (setq company-idle-delay 0.2)
+    :hook (,eglot-modes . company-mode)))
 
 (use-package multiple-cursors
   :ensure t)
@@ -216,11 +229,6 @@
 
 (use-package markdown-mode
   :ensure t)
-
-(use-package org-mode
-  :init
-  (setopt org-agenda-files '("/Users/tyler/Dropbox/notes"))
-  (setopt org-agenda-file-regexp "\\`[^.].*\\.org\\(\\.gpg\\)?\\'"))
 
 (use-package eldoc
   :preface
@@ -344,11 +352,48 @@ keeping it because it's the first real command I wrote!"
     (select-window other-win)
     (switch-to-buffer current-buf)))
 
-(defun tyler/expand-region ()
-  (interactive)
-  (if (and (boundp 'combobulate-mode) combobulate-mode)
-      (command-execute 'combobulate-mark-node-dwim)
-    (command-execute 'er/expand-region)))
+(defun tyler/split-window-sensibly (&optional window)
+  "Copy/paste of `split-window-sensibly', but whereas that function
+prefers a horizontal divider when horizontal and vertical are both
+possible, this function prefers a vertical one."
+  (let ((window (or window (selected-window))))
+    (or (and (window-splittable-p window t)
+	           ;; Split window horizontally.
+	           (with-selected-window window
+	             (split-window-right)))
+        (and (window-splittable-p window)
+	           ;; Split window vertically.
+	           (with-selected-window window
+	             (split-window-below)))
+	      (and
+         ;; If WINDOW is the only usable window on its frame (it is
+         ;; the only one or, not being the only one, all the other
+         ;; ones are dedicated) and is not the minibuffer window, try
+         ;; to split it vertically disregarding the value of
+         ;; `split-height-threshold'.
+         (let ((frame (window-frame window)))
+           (or
+            (eq window (frame-root-window frame))
+            (catch 'done
+              (walk-window-tree (lambda (w)
+                                  (unless (or (eq w window)
+                                              (window-dedicated-p w))
+                                    (throw 'done nil)))
+                                frame nil 'nomini)
+              t)))
+	       (not (window-minibuffer-p window))
+	       (let ((split-height-threshold 0))
+	         (when (window-splittable-p window)
+	           (with-selected-window window
+	             (split-window-below))))))))
+(setopt split-window-preferred-function 'tyler/split-window-sensibly)
+
+
+;; (defun tyler/expand-region ()
+;;   (interactive)
+;;   (if (and (boundp 'combobulate-mode) combobulate-mode)
+;;       (command-execute 'combobulate-mark-node-dwim)
+;;     (command-execute 'er/expand-region)))
 
 (defun tyler/transpose-table ()
   (interactive)
@@ -370,7 +415,7 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "C-c C-p") 'mc/mark-previous-like-this)
     (define-key map (kbd "C-c C-l") 'mc/edit-lines)
     (define-key map (kbd "C-c =") 'mc/mark-all-like-this)
-    (define-key map (kbd "C-c SPC") 'tyler/expand-region)
+    (define-key map (kbd "C-c SPC") 'er/expand-region)
     (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
     (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
     (define-key map (kbd "C-c /") 'completion-at-point)
@@ -384,7 +429,8 @@ keeping it because it's the first real command I wrote!"
     (define-key map (kbd "C-h a") 'helm-apropos)
     (define-key map (kbd "C-h z") 'shortdoc-display-group)
     (define-key map (kbd "C-c r") 're-builder)
-    (define-key map (kbd "C-c C-j") 'avy-goto-char)
+    (define-key map (kbd "C-c C-j") 'avy-goto-char-2)
+    (define-key map (kbd "C-c b") 'scratch-buffer)
     (define-key map [f3] 'kill-buffer)
     (define-key map [f4] 'display-line-numbers-mode)
     (define-key map [f12] 'compile)
@@ -432,6 +478,7 @@ keeping it because it's the first real command I wrote!"
  ;; If there is more than one, they won't work right.
  '(completions-annotations ((t (:foreground "brightblack"))))
  '(eglot-diagnostic-tag-unnecessary-face ((t (:inherit warning))))
+ '(error ((t (:foreground "color-207" :weight bold))))
  '(flycheck-delimited-error ((t (:background "color-52"))))
  '(header-line ((t (:background "color-235" :inverse-video nil :underline t))))
  '(helm-ff-directory ((t (:foreground "color-25"))))
@@ -440,6 +487,8 @@ keeping it because it's the first real command I wrote!"
  '(lsp-headerline-breadcrumb-path-face ((t nil)))
  '(lsp-headerline-breadcrumb-project-prefix-face ((t nil)))
  '(lsp-headerline-breadcrumb-symbols-face ((t (:inherit font-lock-function-name-face :weight normal))))
+ '(mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "brightwhite" :background "color-238"))))
+ '(mode-line-inactive ((t (:weight light :box (:line-width (1 . -1) :color "grey40") :foreground "color-244" :background "color-236" :inherit mode-line))))
  '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
  '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
  '(speedbar-button-face ((((class color) (background dark)) (:foreground "green3"))))
@@ -561,7 +610,17 @@ keeping it because it's the first real command I wrote!"
  '(python-flymake-command nil)
  '(python-indent-guess-indent-offset nil)
  '(safe-local-variable-values
-   '((flymake-eslint-project-root . "/Users/tyler/pittbos-fe")
+   '((flymake-eslint-executable-args . ".")
+     (flymake-eslint-executable-args . "lint")
+     (flymake-eslint-executable-name . "~/hearth-sauna/node_modules/.bin/next")
+     (flymake-eslint-executable-name . "~/hearth-sauna/node_modules/.bin/next lint")
+     (flymake-eslint-executable-name . "node_modules/.bin/next lint")
+     (flymake-eslint-executable-name concat
+                                     (locate-dominating-file buffer-file-name "node_modules")
+                                     "node_modules/.bin/next lint")
+     (flymake-eslint-executable-name . "npx next lint")
+     (flymake-eslint-executable-name . "npm run lint")
+     (flymake-eslint-project-root . "/Users/tyler/pittbos-fe")
      (lsp-python-ms-extra-paths .
                                 ["/Users/tyler/ebcs/clients/modules" "/opt/web2py" "/opt/web2py/gluon/packages/dal"])
      (lsp-python-ms-extra-paths .
