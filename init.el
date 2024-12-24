@@ -126,24 +126,76 @@
 (use-package multiple-cursors
   :ensure t)
 
-(use-package helm
+;; (use-package helm
+;;   :ensure t
+;;   :config
+;;   (helm-mode 1)
+;;   (setq helm-split-window-default-side 'right)
+;;   (setq helm-buffer-max-length 50)
+;;   (setq helm-buffers-fuzzy-matching t)
+;;   (setq helm-move-to-line-cycle-in-source nil)
+;;   :bind
+;;   (("M-y" . helm-show-kill-ring)
+;;    ("M-x" . helm-M-x)
+;;    ("C-x C-f" . helm-find-files)
+;;    ("C-x b" . helm-mini)
+;;    ("C-h SPC" . helm-all-mark-rings)
+;;    ("C-c C-o" . helm-occur)
+;;    :map helm-map
+;;    ("<up>" . previous-history-element)
+;;    ("<down>" . next-history-element)))
+
+;; 
+(use-package vertico
   :ensure t
-  :config
-  (helm-mode 1)
-  (setq helm-split-window-default-side 'right)
-  (setq helm-buffer-max-length 50)
-  (setq helm-buffers-fuzzy-matching t)
-  (setq helm-move-to-line-cycle-in-source nil)
-  :bind
-  (("M-y" . helm-show-kill-ring)
-   ("M-x" . helm-M-x)
-   ("C-x C-f" . helm-find-files)
-   ("C-x b" . helm-mini)
-   ("C-h SPC" . helm-all-mark-rings)
-   ("C-c C-o" . helm-occur)
-   :map helm-map
-   ("<up>" . previous-history-element)
-   ("<down>" . next-history-element)))
+  :bind (:map vertico-map
+              ("RET" . vertico-directory-enter)
+              ("DEL" . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word))
+  :init
+  (vertico-mode)
+  (vertico-buffer-mode))
+
+;; Enable rich annotations using the Marginalia package
+(use-package marginalia
+  :ensure t
+  ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
+  ;; available in the *Completions* buffer, add it to the
+  ;; `completion-list-mode-map'.
+  :bind (:map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init section is always executed.
+  :init
+
+  ;; Marginalia must be activated in the :init section of use-package such that
+  ;; the mode gets enabled right away. Note that this forces loading the
+  ;; package.
+  (marginalia-mode))
+
+(use-package consult
+  :ensure t
+  :bind (("C-x b" . consult-buffer)
+         ("M-y" . consult-yank-replace)
+         ))
+
+(use-package orderless
+  :ensure t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
+(use-package embark
+  :ensure t
+  :bind (("C-c TAB" . embark-act)))
+
+(use-package embark-consult
+  :ensure t)
+
+;; (use-package savehist
+;;   :ensure t
+;;   :init
+;;   (savehist-mode))
 
 (use-package dockerfile-ts-mode
   :mode "Dockerfile")
@@ -370,10 +422,8 @@ instead of buffer lines."
     (define-key map (kbd "M-.") 'xref-find-definitions)
     (define-key map (kbd "M-?") 'xref-find-references)
     (define-key map (kbd "M-,") 'xref-pop-marker-stack)
-    (define-key map (kbd "C-c C-o") 'helm-occur)
     (define-key map (kbd "C-c s") 'window-swap-states)
     (define-key map (kbd "C-c d") 'dash-at-point)
-    (define-key map (kbd "C-h a") 'helm-apropos)
     (define-key map (kbd "C-h z") 'shortdoc-display-group)
     (define-key map (kbd "C-c r") 're-builder)
     (define-key map (kbd "C-c C-j") 'avy-goto-char-2)
@@ -428,9 +478,6 @@ instead of buffer lines."
  '(error ((t (:foreground "color-207" :weight bold))))
  '(flycheck-delimited-error ((t (:background "color-52"))))
  '(header-line ((t (:background "color-235" :inverse-video nil :underline t))))
- '(helm-ff-directory ((t (:foreground "color-25"))))
- '(helm-ff-dotted-directory ((t (:foreground "brightblack"))))
- '(helm-selection ((t (:inverse-video t))))
  '(mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "brightwhite" :background "color-238"))))
  '(mode-line-inactive ((t (:weight light :box (:line-width (1 . -1) :color "grey40") :foreground "color-244" :background "color-236" :inherit mode-line))))
  '(web-mode-html-tag-bracket-face ((t (:foreground "brightblack")))))
@@ -440,4 +487,4 @@ instead of buffer lines."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(markdown-mode restclient expand-region helm multiple-cursors company svelte-mode avy)))
+   '(embark-consult orderless consult marginalia vertico markdown-mode restclient expand-region helm multiple-cursors company svelte-mode avy)))
