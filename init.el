@@ -9,18 +9,6 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
-; Add :defer t to use-package expressions by default
-(setq use-package-always-defer t)
-
-; Make garbage collection trigger less often
-(setq gc-cons-threshold (* 1024 1024 2))
-
-; Increase chunk size when reading from subprocesses
-(setq read-process-output-max (* 1024 1024))
-
-; Defer fontification while there is input pending
-;; (setq jit-lock-defer-time 0)
-
 (use-package treesit
   :preface
   (defun tyler/treesit-install-grammars ()
@@ -61,27 +49,6 @@
   (avy-lead-face-2 ((t (:foreground "#e52b50" :background "unset"))))
   (avy-goto-char-timer-face ((t (:foreground "black")))))
 
-;; (use-package combobulate
-;;   :commands combobulate-mode
-;;   :hook ((js-ts-mode typescript-ts-mode tsx-ts-mode python-ts-mode yaml-ts-mode css-ts-mode vue-ts-mode) . #'combobulate-mode)
-;;   :bind (:map combobulate-proffer-map
-;;               ("SPC" . 'next)
-;;               ("p" . 'prev))
-;;   :config
-;;   (setopt combobulate-beginning-of-defun-behavior 'self-and-sibling-first)
-;;   (setopt combobulate-js-ts-enable-attribute-envelopes nil) ; don't auto-insert quotes after = is typed
-;;   :load-path ("site-lisp/combobulate"))
-
-(use-package dash-at-point
-  :ensure t)
-
-(defvar
-  eglot-modes
-  '(typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode)
-  "Modes that should use eglot. The same modes should also use company-mode, so store in a variable to avoid duplicating.")
-
-;; Had to apply the patch in https://github.com/joaotavora/eglot/discussions/1345
-;; to fix bug where hovering on a symbol in a typescript buffer would throw an error.
 (eval
  `(use-package eglot
     :ensure t
@@ -89,48 +56,29 @@
     (setopt eglot-events-buffer-size 0)
     (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
     (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
-    :hook (,eglot-modes . #'eglot-ensure)))
-
-;;;;;; commented out - this breaks ignoring dirs with "C-x p f" and "C-x p g". Can't remember why I needed it, so experimenting till I rediscover that.
-;; The following three expressions tell eglot how to locate tsconfig.json
-;; in a typescript project. This makes sure the buffer's typescript diagnostics
-;; are consistent with the project's configuration.
-;; (cl-defmethod project-root ((project (head eglot-project)))
-;;   (cdr project))
-
-;; (defun my-project-try-tsconfig-json (dir)
-;;   (when-let* ((found (locate-dominating-file dir "tsconfig.json")))
-;;     (cons 'eglot-project found)))
-
-
-;; (with-eval-after-load "project" 
-;;   (add-hook 'project-find-functions
-;;             'my-project-try-tsconfig-json nil nil))
-;; Done telling eglot how to locate tsconfig.json
+    :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure)))
 
 (use-package flymake
   :bind (("C-c f l" . flymake-show-buffer-diagnostics)
          ("C-c f n" . flymake-goto-next-error)
          ("C-c f p" . flymake-goto-prev-error)))
 
-(use-package yaml-ts-mode
-  :mode "\\.ya?ml\\'")
-
 (use-package flymake-eslint
   :ensure t
-  :hook ((tsx-ts-mode typescript-ts-mode js-ts-mode vue-ts-mode svelte-mode) . (lambda ()
-                                                                     (when (not (eq buffer-file-name nil))
-                                                                       (setq-local flymake-eslint-project-root (locate-dominating-file (buffer-file-name) (lambda (dir)
-                                                                                                                                                            (or (file-exists-p (expand-file-name ".eslintrc.js" dir))
-                                                                                                                                                                (file-exists-p (expand-file-name ".eslintrc.cjs" dir))
-                                                                                                                                                                (file-exists-p (expand-file-name ".eslintrc.json" dir))))))
-                                                                       (setq-local flymake-eslint-executable-name (concat (locate-dominating-file buffer-file-name "node_modules") "node_modules/.bin/eslint")))
-                                                                       ; It would make the most sense to call (flymake-eslint-enable) here,
-                                                                       ; but some interaction with eglot makes that fail. This is a workaround.
-                                                                       ; https://github.com/orzechowskid/flymake-eslint/issues/23
-                                                                       (add-hook 'eglot-managed-mode-hook (lambda ()
-                                                                                                            (when (file-exists-p (concat (locate-dominating-file buffer-file-name "node_modules") "node_modules/.bin/eslint"))
-                                                                                                              (flymake-eslint-enable)))))))
+  :hook
+  (eglot-managed-mode
+   . (lambda ()
+       (let ((eslint-executable (concat (locate-dominating-file buffer-file-name "node_modules") "node_modules/.bin/eslint")))
+         (when (and (or (derived-mode-p 'web-mode)
+                        (derived-mode-p 'js-mode)
+                        (derived-mode-p 'typescript-ts-mode)
+                        (derived-mode-p 'tsx-ts-mode))
+                    (file-exists-p eslint-executable))
+           (setq-local flymake-eslint-executable-name eslint-executable)
+           (flymake-eslint-enable))))))
+
+(use-package yaml-ts-mode
+  :mode "\\.ya?ml\\'")
 
 (use-package tsx-ts-mode
   :mode "\\.[jt]sx\\'")
@@ -167,14 +115,13 @@
   :config
   (setq go-ts-mode-indent-offset 2))
 
-(eval
- `(use-package company
-    :ensure t
-    :defer nil
-    :bind ("M-/" . company-complete)
-    :config
-    (setq company-idle-delay 0.2)
-    :hook (,eglot-modes . company-mode)))
+(use-package company
+  :ensure t
+  :defer nil
+  :bind ("M-/" . company-complete)
+  :config
+  (setq company-idle-delay 0.01)
+  (global-company-mode))
 
 (use-package multiple-cursors
   :ensure t)
@@ -201,6 +148,9 @@
 (use-package dockerfile-ts-mode
   :mode "Dockerfile")
 
+(use-package markdown-mode
+  :ensure t)
+
 (use-package expand-region
   :ensure t)
 
@@ -226,9 +176,6 @@
   :init
   (setq epa-pinentry-mode 'loopback)
   (setq epa-file-cache-passphrase-for-symmetric-encryption t))
-
-(use-package markdown-mode
-  :ensure t)
 
 (use-package eldoc
   :preface
@@ -319,74 +266,74 @@ instead of buffer lines."
     (forward-line)
     (move-to-column col)))
 
-(defun tyler/swap-windows (&optional other-win)
-  "Swap the buffers displayed in the current window and OTHER-WIN.
+;; (defun tyler/swap-windows (&optional other-win)
+;;   "Swap the buffers displayed in the current window and OTHER-WIN.
 
-If no argument is supplied, OTHER-WIN defaults to the window
-returned by `next-window'.
+;; If no argument is supplied, OTHER-WIN defaults to the window
+;; returned by `next-window'.
 
-When called interactively and more than two windows are open,
-prompt for a buffer name and swap with the window containing that
-buffer.
+;; When called interactively and more than two windows are open,
+;; prompt for a buffer name and swap with the window containing that
+;; buffer.
 
-After I wrote this I discovered `window-swap-states', but I'm
-keeping it because it's the first real command I wrote!"
-  (interactive
-   (list (let ((num-windows (length (window-list))))
-           (cond ((<= num-windows 1)
-                  (user-error "No other window to swap with"))
-                 ((> num-windows 2)
-                  (get-buffer-window
-                   (read-buffer
-                    "Swap current buffer with: "
-                    (window-buffer (next-window))
-                    nil
-                    (lambda (buf)
-                      (and
-                       (get-buffer-window buf)
-                       (not (eq buf (buffer-name))))))))))))
-  (if (eq other-win nil)
-      (setq other-win (next-window)))
-  (let ((current-buf (current-buffer)))
-    (switch-to-buffer (window-buffer other-win))
-    (select-window other-win)
-    (switch-to-buffer current-buf)))
+;; After I wrote this I discovered `window-swap-states', but I'm
+;; keeping it because it's the first real command I wrote!"
+;;   (interactive
+;;    (list (let ((num-windows (length (window-list))))
+;;            (cond ((<= num-windows 1)
+;;                   (user-error "No other window to swap with"))
+;;                  ((> num-windows 2)
+;;                   (get-buffer-window
+;;                    (read-buffer
+;;                     "Swap current buffer with: "
+;;                     (window-buffer (next-window))
+;;                     nil
+;;                     (lambda (buf)
+;;                       (and
+;;                        (get-buffer-window buf)
+;;                        (not (eq buf (buffer-name))))))))))))
+;;   (if (eq other-win nil)
+;;       (setq other-win (next-window)))
+;;   (let ((current-buf (current-buffer)))
+;;     (switch-to-buffer (window-buffer other-win))
+;;     (select-window other-win)
+;;     (switch-to-buffer current-buf)))
 
-(defun tyler/split-window-sensibly (&optional window)
-  "Copy/paste of `split-window-sensibly', but whereas that function
-prefers a horizontal divider when horizontal and vertical are both
-possible, this function prefers a vertical one."
-  (let ((window (or window (selected-window))))
-    (or (and (window-splittable-p window t)
-	           ;; Split window horizontally.
-	           (with-selected-window window
-	             (split-window-right)))
-        (and (window-splittable-p window)
-	           ;; Split window vertically.
-	           (with-selected-window window
-	             (split-window-below)))
-	      (and
-         ;; If WINDOW is the only usable window on its frame (it is
-         ;; the only one or, not being the only one, all the other
-         ;; ones are dedicated) and is not the minibuffer window, try
-         ;; to split it vertically disregarding the value of
-         ;; `split-height-threshold'.
-         (let ((frame (window-frame window)))
-           (or
-            (eq window (frame-root-window frame))
-            (catch 'done
-              (walk-window-tree (lambda (w)
-                                  (unless (or (eq w window)
-                                              (window-dedicated-p w))
-                                    (throw 'done nil)))
-                                frame nil 'nomini)
-              t)))
-	       (not (window-minibuffer-p window))
-	       (let ((split-height-threshold 0))
-	         (when (window-splittable-p window)
-	           (with-selected-window window
-	             (split-window-below))))))))
-(setopt split-window-preferred-function 'tyler/split-window-sensibly)
+;; (defun tyler/split-window-sensibly (&optional window)
+;;   "Copy/paste of `split-window-sensibly', but whereas that function
+;; prefers a horizontal divider when horizontal and vertical are both
+;; possible, this function prefers a vertical one."
+;;   (let ((window (or window (selected-window))))
+;;     (or (and (window-splittable-p window t)
+;; 	           ;; Split window horizontally.
+;; 	           (with-selected-window window
+;; 	             (split-window-right)))
+;;         (and (window-splittable-p window)
+;; 	           ;; Split window vertically.
+;; 	           (with-selected-window window
+;; 	             (split-window-below)))
+;; 	      (and
+;;          ;; If WINDOW is the only usable window on its frame (it is
+;;          ;; the only one or, not being the only one, all the other
+;;          ;; ones are dedicated) and is not the minibuffer window, try
+;;          ;; to split it vertically disregarding the value of
+;;          ;; `split-height-threshold'.
+;;          (let ((frame (window-frame window)))
+;;            (or
+;;             (eq window (frame-root-window frame))
+;;             (catch 'done
+;;               (walk-window-tree (lambda (w)
+;;                                   (unless (or (eq w window)
+;;                                               (window-dedicated-p w))
+;;                                     (throw 'done nil)))
+;;                                 frame nil 'nomini)
+;;               t)))
+;; 	       (not (window-minibuffer-p window))
+;; 	       (let ((split-height-threshold 0))
+;; 	         (when (window-splittable-p window)
+;; 	           (with-selected-window window
+;; 	             (split-window-below))))))))
+;; (setopt split-window-preferred-function 'tyler/split-window-sensibly)
 
 
 ;; (defun tyler/expand-region ()
@@ -484,152 +431,13 @@ possible, this function prefers a vertical one."
  '(helm-ff-directory ((t (:foreground "color-25"))))
  '(helm-ff-dotted-directory ((t (:foreground "brightblack"))))
  '(helm-selection ((t (:inverse-video t))))
- '(lsp-headerline-breadcrumb-path-face ((t nil)))
- '(lsp-headerline-breadcrumb-project-prefix-face ((t nil)))
- '(lsp-headerline-breadcrumb-symbols-face ((t (:inherit font-lock-function-name-face :weight normal))))
  '(mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "brightwhite" :background "color-238"))))
  '(mode-line-inactive ((t (:weight light :box (:line-width (1 . -1) :color "grey40") :foreground "color-244" :background "color-236" :inherit mode-line))))
- '(mumamo-background-chunk-major ((((class color) (min-colors 88) (background dark)) nil)))
- '(mumamo-background-chunk-submode1 ((default nil) (nil (:background "#111111"))))
- '(speedbar-button-face ((((class color) (background dark)) (:foreground "green3"))))
- '(speedbar-directory-face ((default nil) (nil (:foreground "#4400cc" :height 0.8))))
- '(speedbar-file-face ((default nil) (nil (:foreground "light blue" :height 0.8))))
- '(speedbar-selected-face ((default nil) (nil (:foreground "red" :underline t :height 0.8))))
- '(tide-hl-identifier-face ((t (:background "blue"))))
  '(web-mode-html-tag-bracket-face ((t (:foreground "brightblack")))))
-
-(put 'downcase-region 'disabled nil)
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(connection-local-criteria-alist
-   '(((:application tramp :machine "Tylers-Laptop")
-      tramp-connection-local-darwin-ps-profile)
-     ((:application tramp :machine "Tylers-Laptop.local")
-      tramp-connection-local-darwin-ps-profile)
-     ((:application tramp :machine "localhost")
-      tramp-connection-local-darwin-ps-profile)
-     ((:application tramp :machine "Tylers-MacBook-Pro.local")
-      tramp-connection-local-darwin-ps-profile)
-     ((:application tramp)
-      tramp-connection-local-default-system-profile tramp-connection-local-default-shell-profile)))
- '(connection-local-profile-alist
-   '((tramp-connection-local-darwin-ps-profile
-      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state=abcde" "-o" "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (euid . number)
-       (user . string)
-       (egid . number)
-       (comm . 52)
-       (state . 5)
-       (ppid . number)
-       (pgrp . number)
-       (sess . number)
-       (ttname . string)
-       (tpgid . number)
-       (minflt . number)
-       (majflt . number)
-       (time . tramp-ps-time)
-       (pri . number)
-       (nice . number)
-       (vsize . number)
-       (rss . number)
-       (etime . tramp-ps-time)
-       (pcpu . number)
-       (pmem . number)
-       (args)))
-     (tramp-connection-local-busybox-ps-profile
-      (tramp-process-attributes-ps-args "-o" "pid,user,group,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "stat=abcde" "-o" "ppid,pgid,tty,time,nice,etime,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (user . string)
-       (group . string)
-       (comm . 52)
-       (state . 5)
-       (ppid . number)
-       (pgrp . number)
-       (ttname . string)
-       (time . tramp-ps-time)
-       (nice . number)
-       (etime . tramp-ps-time)
-       (args)))
-     (tramp-connection-local-bsd-ps-profile
-      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,euid,user,egid,egroup,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state,ppid,pgid,sid,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etimes,pcpu,pmem,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (euid . number)
-       (user . string)
-       (egid . number)
-       (group . string)
-       (comm . 52)
-       (state . string)
-       (ppid . number)
-       (pgrp . number)
-       (sess . number)
-       (ttname . string)
-       (tpgid . number)
-       (minflt . number)
-       (majflt . number)
-       (time . tramp-ps-time)
-       (pri . number)
-       (nice . number)
-       (vsize . number)
-       (rss . number)
-       (etime . number)
-       (pcpu . number)
-       (pmem . number)
-       (args)))
-     (tramp-connection-local-default-shell-profile
-      (shell-file-name . "/bin/sh")
-      (shell-command-switch . "-c"))
-     (tramp-connection-local-default-system-profile
-      (path-separator . ":")
-      (null-device . "/dev/null"))))
- '(css-indent-offset 2)
- '(dabbrev-case-distinction nil)
- '(dabbrev-case-fold-search t)
- '(dabbrev-case-replace nil)
- '(eldoc-mode-hook '(eldoc-mode-set-explicitly))
- '(helm-boring-buffer-regexp-list
-   '("\\` " "\\`\\*helm" "\\`\\*Echo Area" "\\`\\*Minibuf" "\\`\\*.+\\*"))
- '(helm-boring-file-regexp-list
-   '("\\.o$" "~$" "\\.bin$" "\\.lbin$" "\\.so$" "\\.a$" "\\.ln$" "\\.blg$" "\\.bbl$" "\\.elc$" "\\.lof$" "\\.glo$" "\\.idx$" "\\.lot$" "\\.svn\\(/\\|$\\)" "\\.hg\\(/\\|$\\)" "\\.git\\(/\\|$\\)" "\\.bzr\\(/\\|$\\)" "CVS\\(/\\|$\\)" "_darcs\\(/\\|$\\)" "_MTN\\(/\\|$\\)" "\\.fmt$" "\\.tfm$" "\\.class$" "\\.fas$" "\\.lib$" "\\.mem$" "\\.x86f$" "\\.sparcf$" "\\.dfsl$" "\\.pfsl$" "\\.d64fsl$" "\\.p64fsl$" "\\.lx64fsl$" "\\.lx32fsl$" "\\.dx64fsl$" "\\.dx32fsl$" "\\.fx64fsl$" "\\.fx32fsl$" "\\.sx64fsl$" "\\.sx32fsl$" "\\.wx64fsl$" "\\.wx32fsl$" "\\.fasl$" "\\.ufsl$" "\\.fsl$" "\\.dxl$" "\\.lo$" "\\.la$" "\\.gmo$" "\\.mo$" "\\.toc$" "\\.aux$" "\\.cp$" "\\.fn$" "\\.ky$" "\\.pg$" "\\.tp$" "\\.vr$" "\\.cps$" "\\.fns$" "\\.kys$" "\\.pgs$" "\\.tps$" "\\.vrs$" "\\.pyc$" "\\.pyo$"))
- '(helm-display-header-line t)
- '(helm-ff-skip-boring-files nil)
- '(helm-imenu-execute-action-at-once-if-one 'ignore)
- '(helm-recentf-fuzzy-match t)
- '(js-indent-level 2)
- '(js2-mode-show-parse-errors nil)
  '(package-selected-packages
-   '(emacs-prisma-mode eglot treesit company-jedi vue-ts-mode eldoc-box markdown-mode avy helm-dash flymake-eslint go-mode use-package tree-sitter-langs tree-sitter tide expand-region typescript-mode projectile terraform-mode json-mode flycheck web-mode seq pkg-info multiple-cursors let-alist dash))
- '(projectile-globally-ignored-directories
-   '(".idea" ".vscode" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" ".ccls-cache" ".cache" ".clangd" ".log" "build" "coverage" "yarn.lock" "package-lock.json" "pnpm-lock.yaml"))
- '(python-flymake-command nil)
- '(python-indent-guess-indent-offset nil)
- '(safe-local-variable-values
-   '((flymake-eslint-executable-args . ".")
-     (flymake-eslint-executable-args . "lint")
-     (flymake-eslint-executable-name . "~/hearth-sauna/node_modules/.bin/next")
-     (flymake-eslint-executable-name . "~/hearth-sauna/node_modules/.bin/next lint")
-     (flymake-eslint-executable-name . "node_modules/.bin/next lint")
-     (flymake-eslint-executable-name concat
-                                     (locate-dominating-file buffer-file-name "node_modules")
-                                     "node_modules/.bin/next lint")
-     (flymake-eslint-executable-name . "npx next lint")
-     (flymake-eslint-executable-name . "npm run lint")
-     (flymake-eslint-project-root . "/Users/tyler/pittbos-fe")
-     (lsp-python-ms-extra-paths .
-                                ["/Users/tyler/ebcs/clients/modules" "/opt/web2py" "/opt/web2py/gluon/packages/dal"])
-     (lsp-python-ms-extra-paths .
-                                ["/Users/tyler/ebcs/clients/modules" "/opt/web2py" "/opt/web2py/gluon/packages"])
-     (lsp-python-ms-extra-paths .
-                                ["/Users/tyler/ebcs/clients/modules" "/opt/web2py"])
-     (require-final-newline nil)
-     (mode-require-final-newline nil)
-     (content-type . "jsx")
-     (web-mode-content-type . "jsx")))
- '(typescript-indent-level 2))
-(put 'narrow-to-region 'disabled nil)
+   '(markdown-mode restclient expand-region helm multiple-cursors company svelte-mode avy)))
