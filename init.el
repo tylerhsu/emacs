@@ -118,11 +118,6 @@
 ;; popup UI for in-buffer autocompletion
 (use-package corfu
   :ensure t
-	;; :hook (corfu-mode . (lambda ()
-	;; 											;; Settings only for Corfu
-	;; 											(setq-local completion-styles '(basic)
-	;; 																	completion-category-overrides nil
-	;; 																	completion-category-defaults nil)))
   :init
   (global-corfu-mode)
 	(setq corfu-auto t)
@@ -144,7 +139,9 @@
          ("C-c C-l" . mc/edit-lines)
          ("C-c =" . mc/mark-all-like-this)))
 
-;; Minibuffer autocomplete UI that shows autocomplete options in a big list
+;; Minibuffer autocomplete UI that shows options in a vertical list.
+;; Similar to builtin fido-vertical-mode, but a little nicer
+;; because it uses async 
 (use-package vertico
   :ensure t
   :bind (:map vertico-map
@@ -170,8 +167,9 @@
 ;; for the given command.
 (use-package consult
   :ensure t
-  :bind (("C-x b" . consult-buffer)
-         ("M-y" . consult-yank-replace)))
+  :bind (("<remap> <switch-to-buffer>" . consult-buffer)
+         ("<remap> <yank-pop>" . consult-yank-replace)
+				 ("<remap> <imenu>" . consult-imenu)))
 
 ;; Fuzzy selection of minibuffer autocomplete options
 (use-package orderless
@@ -186,7 +184,9 @@
 ;; Mainly for minibuffer completion candidates, e.g. delete a file selected during C-x C-f.
 (use-package embark
   :ensure t
-  :bind (("C-c TAB" . embark-act)))
+  :bind (:map vertico-map
+							("TAB" . embark-act)
+							("<remap> <set-mark-command>" . embark-select)))
 
 (use-package embark-consult
   :ensure t)
@@ -194,6 +194,10 @@
 (use-package savehist
   :init
   (savehist-mode))
+
+(use-package recentf
+	:init
+	(recentf-mode +1))
 
 (use-package dockerfile-ts-mode
   :mode "Dockerfile")

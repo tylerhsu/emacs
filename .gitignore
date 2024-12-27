@@ -17,3 +17,5 @@ autosaves
 eshell
 projects
 tree-sitter
+history
+org-persist
