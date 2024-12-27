@@ -40,6 +40,7 @@
 
 (use-package avy
   :ensure t
+  :bind (("C-c C-j" . avy-isearch))
   :config
   (setq avy-background t)
   :custom-face
@@ -49,14 +50,13 @@
   (avy-lead-face-2 ((t (:foreground "#e52b50" :background "unset"))))
   (avy-goto-char-timer-face ((t (:foreground "black")))))
 
-(eval
- `(use-package eglot
-    :ensure t
-    :config
-    (setopt eglot-events-buffer-size 0)
-    (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
-    (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
-    :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure)))
+(use-package eglot
+  :ensure t
+  :config
+  (setopt eglot-events-buffer-size 0)
+  (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
+  (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+  :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure))
 
 (use-package flymake
   :bind (("C-c f l" . flymake-show-buffer-diagnostics)
@@ -115,76 +115,75 @@
   :config
   (setq go-ts-mode-indent-offset 2))
 
-(use-package company
+;; popup UI for in-buffer autocompletion
+(use-package corfu
   :ensure t
-  :defer nil
-  :bind ("M-/" . company-complete)
-  :config
-  (setq company-idle-delay 0.01)
-  (global-company-mode))
+	;; :hook (corfu-mode . (lambda ()
+	;; 											;; Settings only for Corfu
+	;; 											(setq-local completion-styles '(basic)
+	;; 																	completion-category-overrides nil
+	;; 																	completion-category-defaults nil)))
+  :init
+  (global-corfu-mode)
+	(setq corfu-auto t)
+	(setq corfu-auto-delay 0.01)
+  ;; Let corfu work in terminal UI. No longer needed in emacs 31 maybe.
+	(unless (display-graphic-p)
+		(add-to-list 'load-path (directory-file-name (expand-file-name "~/.emacs.d/site-lisp/emacs-corfu-terminal")))
+		(add-to-list 'load-path (directory-file-name (expand-file-name "~/.emacs.d/site-lisp/emacs-popon")))
+		(defvar corfu-terminal-mode nil "non-nil if Corfu Terminal mode is enabled")
+		(require 'corfu-terminal)
+    (corfu-terminal-mode))
+	:custom-face
+	(corfu-default ((t (:background "color-236")))))
 
 (use-package multiple-cursors
-  :ensure t)
+  :ensure t
+  :bind (("C-c C-n" . mc/mark-more-like-this-extended)
+         ("C-c C-p" . mc/mark-previous-like-this)
+         ("C-c C-l" . mc/edit-lines)
+         ("C-c =" . mc/mark-all-like-this)))
 
-;; (use-package helm
-;;   :ensure t
-;;   :config
-;;   (helm-mode 1)
-;;   (setq helm-split-window-default-side 'right)
-;;   (setq helm-buffer-max-length 50)
-;;   (setq helm-buffers-fuzzy-matching t)
-;;   (setq helm-move-to-line-cycle-in-source nil)
-;;   :bind
-;;   (("M-y" . helm-show-kill-ring)
-;;    ("M-x" . helm-M-x)
-;;    ("C-x C-f" . helm-find-files)
-;;    ("C-x b" . helm-mini)
-;;    ("C-h SPC" . helm-all-mark-rings)
-;;    ("C-c C-o" . helm-occur)
-;;    :map helm-map
-;;    ("<up>" . previous-history-element)
-;;    ("<down>" . next-history-element)))
-
-;; 
+;; Minibuffer autocomplete UI that shows autocomplete options in a big list
 (use-package vertico
   :ensure t
   :bind (:map vertico-map
               ("RET" . vertico-directory-enter)
               ("DEL" . vertico-directory-delete-char)
               ("M-DEL" . vertico-directory-delete-word))
+  :custom-face
+  ;; highlighted option
+  (vertico-current ((t (:background "color-236"))))
   :init
-  (vertico-mode)
-  (vertico-buffer-mode))
+  (vertico-mode))
 
-;; Enable rich annotations using the Marginalia package
+;; Adds various annotations beside minibuffer autocomplete options
 (use-package marginalia
   :ensure t
-  ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
-  ;; available in the *Completions* buffer, add it to the
-  ;; `completion-list-mode-map'.
   :bind (:map minibuffer-local-map
          ("M-A" . marginalia-cycle))
-
-  ;; The :init section is always executed.
   :init
-
-  ;; Marginalia must be activated in the :init section of use-package such that
-  ;; the mode gets enabled right away. Note that this forces loading the
-  ;; package.
   (marginalia-mode))
 
+;; Minibuffer autocomplete backend. consult-* functions enhance
+;; commands by providing completions that make sense
+;; for the given command.
 (use-package consult
   :ensure t
   :bind (("C-x b" . consult-buffer)
-         ("M-y" . consult-yank-replace)
-         ))
+         ("M-y" . consult-yank-replace)))
 
+;; Fuzzy selection of minibuffer autocomplete options
 (use-package orderless
   :ensure t
   :custom
+  ;; completion-styles is a builtin emacs variable controlling how completion candidates are decided.
+  ;; basic is the default. This package adds 'orderless'.
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles basic partial-completion)))))
 
+;; Provide context actions. Like a right-click menu for whatever is at point.
+;; Mainly for minibuffer completion candidates, e.g. delete a file selected during C-x C-f.
 (use-package embark
   :ensure t
   :bind (("C-c TAB" . embark-act)))
@@ -192,10 +191,9 @@
 (use-package embark-consult
   :ensure t)
 
-;; (use-package savehist
-;;   :ensure t
-;;   :init
-;;   (savehist-mode))
+(use-package savehist
+  :init
+  (savehist-mode))
 
 (use-package dockerfile-ts-mode
   :mode "Dockerfile")
@@ -204,7 +202,8 @@
   :ensure t)
 
 (use-package expand-region
-  :ensure t)
+  :ensure t
+  :bind (("C-c SPC" . er/expand-region)))
 
 (use-package restclient
   :ensure t
@@ -284,18 +283,6 @@ instead of buffer lines."
   :mode "\\.prisma\\'"
   :load-path ("site-lisp/prisma-mode"))
 
-;; Display
-
-;; remove toolbar, menu bar
-(if (fboundp 'tool-bar-mode)
-    (tool-bar-mode 0))
-(menu-bar-mode 0)
-
-;; colors
-(set-background-color "#000000")
-(set-cursor-color "#ff0000")
-(set-foreground-color "#ffffff")
-
 ;; Custom functions
 
 (defun my-move-line-up()
@@ -357,14 +344,14 @@ instead of buffer lines."
 ;; possible, this function prefers a vertical one."
 ;;   (let ((window (or window (selected-window))))
 ;;     (or (and (window-splittable-p window t)
-;; 	           ;; Split window horizontally.
-;; 	           (with-selected-window window
-;; 	             (split-window-right)))
+;;             ;; Split window horizontally.
+;;             (with-selected-window window
+;;               (split-window-right)))
 ;;         (and (window-splittable-p window)
-;; 	           ;; Split window vertically.
-;; 	           (with-selected-window window
-;; 	             (split-window-below)))
-;; 	      (and
+;;             ;; Split window vertically.
+;;             (with-selected-window window
+;;               (split-window-below)))
+;;        (and
 ;;          ;; If WINDOW is the only usable window on its frame (it is
 ;;          ;; the only one or, not being the only one, all the other
 ;;          ;; ones are dedicated) and is not the minibuffer window, try
@@ -380,11 +367,11 @@ instead of buffer lines."
 ;;                                     (throw 'done nil)))
 ;;                                 frame nil 'nomini)
 ;;               t)))
-;; 	       (not (window-minibuffer-p window))
-;; 	       (let ((split-height-threshold 0))
-;; 	         (when (window-splittable-p window)
-;; 	           (with-selected-window window
-;; 	             (split-window-below))))))))
+;;         (not (window-minibuffer-p window))
+;;         (let ((split-height-threshold 0))
+;;           (when (window-splittable-p window)
+;;             (with-selected-window window
+;;               (split-window-below))))))))
 ;; (setopt split-window-preferred-function 'tyler/split-window-sensibly)
 
 
@@ -399,92 +386,68 @@ instead of buffer lines."
   (command-execute 'org-table-create-or-convert-from-region)
   (command-execute 'org-table-transpose-table-at-point))
 
-;; my key bindings
-(defvar my-keys-minor-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-z") 'undo)
-    (define-key map (kbd "C-c p") 'my-move-line-up)
-    (define-key map (kbd "C-c n") 'my-move-line-down)
-    (define-key map (kbd "C-c j") 'duplicate-dwim)
-    (define-key map (kbd "C-c ;") 'comment-or-uncomment-region)
-    (define-key map (kbd "C-l") 'goto-line)
-    (define-key map (kbd "<up>") 'scroll-down-line)
-    (define-key map (kbd "<down>") 'scroll-up-line)
-    (define-key map (kbd "C-c C-n") 'mc/mark-more-like-this-extended)
-    (define-key map (kbd "C-c C-p") 'mc/mark-previous-like-this)
-    (define-key map (kbd "C-c C-l") 'mc/edit-lines)
-    (define-key map (kbd "C-c =") 'mc/mark-all-like-this)
-    (define-key map (kbd "C-c SPC") 'er/expand-region)
-    (define-key map (kbd "C-c C-SPC") 'set-rectangular-region-anchor)
-    (define-key map (kbd "C-c C-s") 'isearch-forward-symbol-at-point)
-    (define-key map (kbd "C-c /") 'completion-at-point)
-    (define-key map (kbd "M-/") 'dabbrev-completion)
-    (define-key map (kbd "M-.") 'xref-find-definitions)
-    (define-key map (kbd "M-?") 'xref-find-references)
-    (define-key map (kbd "M-,") 'xref-pop-marker-stack)
-    (define-key map (kbd "C-c s") 'window-swap-states)
-    (define-key map (kbd "C-c d") 'dash-at-point)
-    (define-key map (kbd "C-h z") 'shortdoc-display-group)
-    (define-key map (kbd "C-c r") 're-builder)
-    (define-key map (kbd "C-c C-j") 'avy-goto-char-2)
-    (define-key map (kbd "C-c b") 'scratch-buffer)
-    (define-key map [f3] 'kill-buffer)
-    (define-key map [f4] 'display-line-numbers-mode)
-    (define-key map [f12] 'compile)
-    map)
-  "My-keys-minor-mode keymap.")
+(use-package emacs
+  :bind (("C-z" . undo)
+         ("C-c p" . my-move-line-up)
+         ("C-c n" . my-move-line-down)
+         ("C-c j" . duplicate-dwim)
+         ("<up>" . scroll-down-line)
+         ("<down>" . scroll-up-line)
+         ("C-c C-SPC" . set-rectangular-region-anchor)
+         ("C-c C-s" . isearch-forward-thing-at-point)
+         ("C-c s" . window-swap-states)
+         ("C-h z" . shortdoc-display-group)
+         ("C-c b" . scratch-buffer)
+         ("C-c l" . display-line-numbers-mode)
+				 ("M-%" . query-replace-regexp))
+  :config
+  ;; prefer spaces-only indentation
+  (setq indent-tabs-mode nil)
 
-(define-minor-mode my-keys-minor-mode
-  "A minor mode so that my key settings override annoying major modes."
-  :init-value t
-  :lighter " my-keys")
+  ;; remove toolbar, menu bar
+  (if (fboundp 'tool-bar-mode)
+      (tool-bar-mode 0))
+  (menu-bar-mode 0)
 
-(my-keys-minor-mode 1)
+  ;; Automatically revert buffers when they change on disk
+  (global-auto-revert-mode 1)
 
-;; Miscellaneous
+  ;; Put autosave files (ie #foo#) in one place, *not*
+  ;; scattered all over the file system!
+  (setq backup-directory-alist
+        `(("." . ,(concat user-emacs-directory "autosaves"))))
+  (setq auto-save-file-name-transforms
+        `((".*" ,(concat user-emacs-directory "autosaves/") t)))
 
-;; Automatically revert buffers when they change on disk
-(global-auto-revert-mode 1)
+  ;; typing replaces selection
+  (delete-selection-mode 1)
 
-;; Put autosave files (ie #foo#) in one place, *not*
-;; scattered all over the file system!
-(setq backup-directory-alist
-      `(("." . ,(concat user-emacs-directory "autosaves"))))
-(setq auto-save-file-name-transforms
-      `((".*" ,(concat user-emacs-directory "autosaves/") t)))
+  ;; go right to an empty buffer
+  (setq inhibit-startup-message t)
 
-;; typing replaces selection
-(delete-selection-mode 1)
+  ;; Make all "yes or no" prompts show "y or n" instead
+  (fset 'yes-or-no-p 'y-or-n-p)
 
-;; go right to an empty buffer
-(setq inhibit-startup-message t)
+  ; Don't want any backup files
+  (setq make-backup-files nil)
 
-;; Make all "yes or no" prompts show "y or n" instead
-(fset 'yes-or-no-p 'y-or-n-p)
+  :custom-face
+  (completions-annotations ((t (:foreground "color-111" :underline nil))))
+  (error ((t (:foreground "color-207" :weight bold))))
+  (header-line ((t (:background "color-235" :inverse-video nil :underline t))))
+  (mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "brightwhite" :background "color-238"))))
+  (mode-line-inactive ((t (:weight light :box (:line-width (1 . -1) :color "grey40") :foreground "color-244" :background "color-236" :inherit mode-line)))))
 
-;; use spaces-only indentation
-(setq-default indent-tabs-mode nil)
-
-; Don't want any backup files
-(setq make-backup-files nil)
-
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(completions-annotations ((t (:foreground "brightblack"))))
- '(eglot-diagnostic-tag-unnecessary-face ((t (:inherit warning))))
- '(error ((t (:foreground "color-207" :weight bold))))
- '(flycheck-delimited-error ((t (:background "color-52"))))
- '(header-line ((t (:background "color-235" :inverse-video nil :underline t))))
- '(mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "brightwhite" :background "color-238"))))
- '(mode-line-inactive ((t (:weight light :box (:line-width (1 . -1) :color "grey40") :foreground "color-244" :background "color-236" :inherit mode-line))))
- '(web-mode-html-tag-bracket-face ((t (:foreground "brightblack")))))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(embark-consult orderless consult marginalia vertico markdown-mode restclient expand-region helm multiple-cursors company svelte-mode avy)))
+   '(corfu wfnames vertico svelte-mode restclient orderless multiple-cursors markdown-mode marginalia flymake-eslint expand-region embark-consult company avy async)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
