@@ -150,7 +150,7 @@
               ("M-DEL" . vertico-directory-delete-word))
   :custom-face
   ;; highlighted option
-  (vertico-current ((t (:background "color-236"))))
+  (vertico-current ((t (:background "darkslategray"))))
   :init
   (vertico-mode))
 
@@ -436,11 +436,11 @@ instead of buffer lines."
   (setq make-backup-files nil)
 
   :custom-face
-  (completions-annotations ((t (:foreground "color-111" :underline nil))))
-  (error ((t (:foreground "color-207" :weight bold))))
+  (completions-annotations ((t (:foreground "powderblue" :underline nil))))
+  (error ((t (:foreground "tomato" :weight bold))))
   (header-line ((t (:background "color-235" :inverse-video nil :underline t))))
-  (mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "brightwhite" :background "color-238"))))
-  (mode-line-inactive ((t (:weight light :box (:line-width (1 . -1) :color "grey40") :foreground "color-244" :background "color-236" :inherit mode-line)))))
+  (mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "burlywood1" :background "#56514c"))))
+  (mode-line-inactive ((t (:foreground "gray60" :background "gray15" :inherit mode-line)))))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
