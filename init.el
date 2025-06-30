@@ -40,7 +40,8 @@
 
 (use-package avy
   :ensure t
-  :bind (("C-c C-j" . avy-isearch))
+  :init
+  (bind-key* "C-c C-j" 'avy-isearch)
   :config
   (setq avy-background t)
   :custom-face
@@ -59,9 +60,10 @@
   :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure))
 
 (use-package flymake
-  :bind (("C-c f l" . flymake-show-buffer-diagnostics)
-         ("C-c f n" . flymake-goto-next-error)
-         ("C-c f p" . flymake-goto-prev-error)))
+  :init
+  (bind-key* "C-c f l" 'flymake-show-buffer-diagnostics)
+  (bind-key* "C-c f n" 'flymake-goto-next-error)
+  (bind-key* "C-c f p" 'flymake-goto-prev-error))
 
 (use-package flymake-eslint
   :ensure t
@@ -81,17 +83,11 @@
   :mode "\\.ya?ml\\'")
 
 (use-package tsx-ts-mode
-  :mode "\\.[jt]sx\\'")
+  :mode "\\.[jt]sx?\\'")
 
-(use-package typescript-ts-mode
-  :mode "\\.ts\\'")
-
-(use-package js-ts-mode
-  :mode "\\.js\\'")
-
-(use-package vue-ts-mode
-  :mode "\\.vue\\'"
-  :load-path ("site-lisp/vue-ts-mode"))
+;; (use-package vue-ts-mode
+;;   :mode "\\.vue\\'"
+;;   :load-path ("site-lisp/vue-ts-mode"))
 
 (use-package python-ts-mode
   :mode "\\.py\\'")
@@ -134,10 +130,11 @@
 
 (use-package multiple-cursors
   :ensure t
-  :bind (("C-c C-n" . mc/mark-more-like-this-extended)
-         ("C-c C-p" . mc/mark-previous-like-this)
-         ("C-c C-l" . mc/edit-lines)
-         ("C-c =" . mc/mark-all-like-this)))
+  :init
+  (bind-key* "C-c C-n" 'mc/mark-more-like-this-extended)
+  (bind-key* "C-c C-p" 'mc/mark-previous-like-this)
+  (bind-key* "C-c C-l" 'mc/edit-lines)
+  (bind-key* "C-c =" 'mc/mark-all-like-this))
 
 ;; Minibuffer autocomplete UI that shows options in a vertical list.
 ;; Similar to builtin fido-vertical-mode, but a little nicer
@@ -150,7 +147,7 @@
               ("M-DEL" . vertico-directory-delete-word))
   :custom-face
   ;; highlighted option
-  (vertico-current ((t (:background "darkslategray"))))
+  (vertico-current ((t (:background "#1d3131"))))
   :init
   (vertico-mode))
 
@@ -169,9 +166,9 @@
   :ensure t
   :bind (("<remap> <switch-to-buffer>" . consult-buffer)
          ("<remap> <yank-pop>" . consult-yank-replace)
-				 ("<remap> <imenu>" . consult-imenu)))
+				 ("<remap> <imenu>" . consult-imenu-multi)))
 
-;; Fuzzy selection of minibuffer autocomplete options
+;; Fuzzy selection of autocomplete options
 (use-package orderless
   :ensure t
   :custom
@@ -179,17 +176,6 @@
   ;; basic is the default. This package adds 'orderless'.
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles basic partial-completion)))))
-
-;; Provide context actions. Like a right-click menu for whatever is at point.
-;; Mainly for minibuffer completion candidates, e.g. delete a file selected during C-x C-f.
-(use-package embark
-  :ensure t
-  :bind (:map vertico-map
-							("TAB" . embark-act)
-							("<remap> <set-mark-command>" . embark-select)))
-
-(use-package embark-consult
-  :ensure t)
 
 (use-package savehist
   :init
@@ -207,7 +193,11 @@
 
 (use-package expand-region
   :ensure t
-  :bind (("C-c SPC" . er/expand-region)))
+  :init
+  (bind-key* "C-c SPC" 'er/expand-region))
+
+(use-package rainbow-mode
+  :ensure t)
 
 (use-package restclient
   :ensure t
@@ -391,22 +381,24 @@ instead of buffer lines."
   (command-execute 'org-table-transpose-table-at-point))
 
 (use-package emacs
-  :bind (("C-z" . undo)
-         ("C-c p" . my-move-line-up)
-         ("C-c n" . my-move-line-down)
-         ("C-c j" . duplicate-dwim)
-         ("<up>" . scroll-down-line)
-         ("<down>" . scroll-up-line)
-         ("C-c C-SPC" . set-rectangular-region-anchor)
-         ("C-c C-s" . isearch-forward-thing-at-point)
-         ("C-c s" . window-swap-states)
-         ("C-h z" . shortdoc-display-group)
-         ("C-c b" . scratch-buffer)
-         ("C-c l" . display-line-numbers-mode)
-				 ("M-%" . query-replace-regexp))
-  :config
+  :init
   ;; prefer spaces-only indentation
-  (setq indent-tabs-mode nil)
+  (setq-default indent-tabs-mode nil)
+  ;; bind-key* makes sure this binding overrides any other mode's bindings.
+  (bind-key* "C-c p" 'my-move-line-up)
+  (bind-key* "C-c n" 'my-move-line-down)
+  (bind-key* "C-c j" 'duplicate-dwim)
+  (bind-key* "<up>" 'scroll-down-line)
+  (bind-key* "<down>" 'scroll-up-line)
+  (bind-key* "C-c C-SPC" 'set-rectangular-region-anchor)
+  (bind-key* "C-c C-s" 'isearch-forward-thing-at-point)
+  (bind-key* "C-c s" 'window-swap-states)
+  (bind-key* "C-h z" 'shortdoc-display-group)
+  (bind-key* "C-c b" 'scratch-buffer)
+  (bind-key* "C-c l" 'display-line-numbers-mode)
+  (bind-key* "C-c i" 'ibuffer)
+  (bind-key* "M-%" 'query-replace-regexp)
+  (bind-key* "C-z" 'undo)
 
   ;; remove toolbar, menu bar
   (if (fboundp 'tool-bar-mode)
@@ -448,10 +440,4 @@ instead of buffer lines."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(corfu wfnames vertico svelte-mode restclient orderless multiple-cursors markdown-mode marginalia flymake-eslint expand-region embark-consult company avy async)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+   '(rainbow-mode corfu wfnames vertico svelte-mode restclient orderless multiple-cursors markdown-mode marginalia flymake-eslint expand-region embark-consult company avy async)))
