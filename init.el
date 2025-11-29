@@ -145,7 +145,7 @@
 (use-package multiple-cursors
   :ensure t
   :config
-  (bind-key* "C-c C-n" 'mc/mark-more-like-this)
+  (bind-key* "C-c C-n" 'mc/mark-more-like-this-extended)
   (bind-key* "C-c C-p" 'mc/mark-previous-like-this)
   (bind-key* "C-c C-=" 'mc/mark-all-like-this))
 
@@ -633,7 +633,7 @@ possible, this function prefers a vertical one."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(avy corfu embark-consult expand-region flymake-eslint god-mode
+   '(avy corfu embark-consult expand-region flymake-eslint
          marginalia markdown-mode multiple-cursors orderless
          rainbow-mode restclient svelte-mode terraform-mode vertico
          vue-ts-mode))
