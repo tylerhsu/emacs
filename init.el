@@ -1,4 +1,4 @@
-;;; Tyler's emacs config
+;;; Tyler's emacs config -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 ;; Tyler's Emacs config
@@ -17,8 +17,8 @@
     (dolist (grammar
              ;; js, ts, and tsx are pinned because the immediate subsequent versions resulted in broken syntax highlighting.
              '((javascript . ("https://github.com/tree-sitter/tree-sitter-javascript" "v0.20.1" "src"))
-               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "typescript/src")
-               (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "tsx/src"))
+               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "typescript/src")
+               (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "tsx/src"))
                (python "https://github.com/tree-sitter/tree-sitter-python")
                (go "https://github.com/tree-sitter/tree-sitter-go")
                (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
@@ -61,7 +61,7 @@
 
 (use-package flymake
   :init
-  (bind-key* "C-c f l" 'flymake-show-buffer-diagnostics)
+  (bind-key* "C-c f l" 'flymake-show-project-diagnostics)
   (bind-key* "C-c f n" 'flymake-goto-next-error)
   (bind-key* "C-c f p" 'flymake-goto-prev-error))
 
@@ -85,9 +85,26 @@
 (use-package tsx-ts-mode
   :mode "\\.[jt]sx?\\'")
 
-;; (use-package vue-ts-mode
-;;   :mode "\\.vue\\'"
-;;   :load-path ("site-lisp/vue-ts-mode"))
+(use-package js
+  :config
+  (setq js-indent-level 2))
+
+(use-package terraform-mode
+  :ensure t)
+
+(use-package vue-ts-mode
+  :mode "\\.vue\\'"
+  :hook (vue-ts-mode . (lambda()
+                         ;; vue-ts-mode does not derive from prog-mode, so prog-mode hook is copied here.
+
+                         ;; electric indent mode indents both the new line and the previous line when
+                         ;; you press enter. Indent only the new line.
+                         (electric-indent-mode 0)
+                         (subword-mode)
+                         ; Enable popup autocomplete
+                         (corfu-mode +1)))
+  :vc (:url "https://github.com/8uff3r/vue-ts-mode"
+       :branch "main"))
 
 (use-package python-ts-mode
   :mode "\\.py\\'")
@@ -115,7 +132,6 @@
 (use-package corfu
   :ensure t
   :init
-  (global-corfu-mode)
 	(setq corfu-auto t)
 	(setq corfu-auto-delay 0.01)
   ;; Let corfu work in terminal UI. No longer needed in emacs 31 maybe.
@@ -124,17 +140,14 @@
 		(add-to-list 'load-path (directory-file-name (expand-file-name "~/.emacs.d/site-lisp/emacs-popon")))
 		(defvar corfu-terminal-mode nil "non-nil if Corfu Terminal mode is enabled")
 		(require 'corfu-terminal)
-    (corfu-terminal-mode))
-	:custom-face
-	(corfu-default ((t (:background "color-236")))))
+    (corfu-terminal-mode)))
 
 (use-package multiple-cursors
   :ensure t
-  :init
-  (bind-key* "C-c C-n" 'mc/mark-more-like-this-extended)
+  :config
+  (bind-key* "C-c C-n" 'mc/mark-more-like-this)
   (bind-key* "C-c C-p" 'mc/mark-previous-like-this)
-  (bind-key* "C-c C-l" 'mc/edit-lines)
-  (bind-key* "C-c =" 'mc/mark-all-like-this))
+  (bind-key* "C-c C-=" 'mc/mark-all-like-this))
 
 ;; Minibuffer autocomplete UI that shows options in a vertical list.
 ;; Similar to builtin fido-vertical-mode, but a little nicer
@@ -213,6 +226,8 @@
                        ;; you press enter. Indent only the new line.
                        (electric-indent-mode 0)
                        (subword-mode)
+                       ; Enable popup autocomplete
+                       (corfu-mode +1)
                        (setq-local tab-width 2))))
 
 ;; EasyPG
@@ -277,27 +292,190 @@ instead of buffer lines."
   :mode "\\.prisma\\'"
   :load-path ("site-lisp/prisma-mode"))
 
+(defun tyler/invert-command (command)
+  "Return a version of COMMAND that inverts the sign on the prefix."
+  (lambda ()
+    (interactive)
+    (let ((current-prefix-arg (- (prefix-numeric-value current-prefix-arg))))
+      (call-interactively command))))
+
+(defun tyler/repeat-command (command &optional negative-command)
+  "Return a version of COMMAND that repeats a number of times equal to the prefix. If NEGATIVE-COMMAND is supplied, invoke that instead of COMMAND when the prefix is negative."
+  (lambda (arg)
+    (interactive "p")
+    (let ((func-to-run (if (and negative-command (< arg 0))
+                           negative-command
+                         command)))
+      (dotimes (_ (abs arg))
+        (funcall func-to-run)))))
+
+(defun tyler/kill-ring-save (region-start-func region-end-func)
+  "Return a command that copies text from point after evaluating REGION-START-FUNC to point after evaluating REGION-END-FUNC."
+  (lambda ()
+    (interactive)
+    (let ((beginning (save-excursion
+                       (unless (null region-start-func)
+                         (call-interactively region-start-func))
+                       (point)))
+          (end (save-excursion
+                 (unless (null region-end-func)
+                   (call-interactively region-end-func))
+                 (point))))
+      (kill-ring-save beginning end)
+      (message "Copied"))))
+
+(use-package my-command-mode
+  :load-path ("site-lisp")
+  :bind (("C-;" . #'my-command-mode-all))
+  :config
+  ;; move
+  (define-key my-command-mode-map (kbd "n") #'next-line)
+  (define-key my-command-mode-map (kbd "p") #'previous-line)
+  (define-key my-command-mode-map (kbd "f") #'forward-word)
+  (define-key my-command-mode-map (kbd "b") #'backward-word)
+  (define-key my-command-mode-map (kbd "j") #'forward-sexp)
+  (define-key my-command-mode-map (kbd "h") #'backward-sexp)
+  (define-key my-command-mode-map (kbd "a") #'back-to-indentation)
+  (define-key my-command-mode-map (kbd "e") #'end-of-line)
+  (define-key my-command-mode-map (kbd "d") #'down-list)
+  (define-key my-command-mode-map (kbd "u") #'up-list)
+  (define-key my-command-mode-map (kbd ",") #'beginning-of-defun)
+  (define-key my-command-mode-map (kbd ".") #'end-of-defun)
+  (define-key my-command-mode-map (kbd "<") #'beginning-of-buffer)
+  (define-key my-command-mode-map (kbd ">") #'end-of-buffer)
+  (define-key my-command-mode-map (kbd "s") #'isearch-forward)
+  (define-key my-command-mode-map (kbd "r") #'isearch-backward)
+  (define-key my-command-mode-map (kbd "v") #'scroll-up)
+  (define-key my-command-mode-map (kbd "o") #'scroll-down)
+  (define-key my-command-mode-map (kbd "l") #'recenter-top-bottom)
+  (define-key my-command-mode-map (kbd "xx") #'exchange-point-and-mark)
+  (define-key my-command-mode-map (kbd "[") #'point-to-register)
+  (define-key my-command-mode-map (kbd "]") #'jump-to-register)
+  (define-key my-command-mode-map (kbd "co") (lambda () (interactive) (call-interactively 'isearch-occur) (call-interactively 'other-window)))
+  ;; misc
+  (define-key my-command-mode-map (kbd "gs") #'query-replace-regexp)
+  (define-key my-command-mode-map (kbd ";") #'comment-line)
+  (define-key my-command-mode-map (kbd "z") #'undo)
+  (define-key my-command-mode-map (kbd "/") #'fixup-whitespace)
+  (define-key my-command-mode-map (kbd "(") #'kmacro-start-macro)
+  (define-key my-command-mode-map (kbd ")") #'kmacro-end-and-call-macro)
+  ;; insert
+  (define-key my-command-mode-map (kbd "i") (lambda () (interactive) (my-command-mode-all -1)))
+  (define-key my-command-mode-map (kbd "P") (lambda () (interactive) (beginning-of-line) (open-line 1) (indent-for-tab-command) (my-command-mode-all -1)))
+  (define-key my-command-mode-map (kbd "N") (lambda () (interactive) (end-of-line) (electric-newline-and-maybe-indent) (my-command-mode-all -1)))
+  (define-key my-command-mode-map (kbd "E") (lambda () (interactive) (end-of-line) (my-command-mode-all -1)))
+  (define-key my-command-mode-map (kbd "A") (lambda () (interactive) (beginning-of-line) (my-command-mode-all -1)))
+  (define-key my-command-mode-map (kbd "M") (lambda () (interactive) (back-to-indentation) (my-command-mode-all -1)))
+  (define-key my-command-mode-map (kbd "O") (lambda () (interactive) (overwrite-mode) (my-command-mode-all -1)))
+  ;; mark
+  (define-key my-command-mode-map (kbd "SPC") #'set-mark-command)
+  (define-key my-command-mode-map (kbd "mf") #'mark-word)
+  (define-key my-command-mode-map (kbd "mb") (tyler/invert-command 'mark-word))
+  (define-key my-command-mode-map (kbd "mw") (lambda () (interactive) (backward-word) (call-interactively 'mark-word)))
+  (define-key my-command-mode-map (kbd "mj") #'mark-sexp)
+  (define-key my-command-mode-map (kbd "mh") (tyler/invert-command 'mark-sexp))
+  (define-key my-command-mode-map (kbd "ms") (lambda () (interactive) (backward-sexp) (call-interactively 'mark-sexp)))
+  (define-key my-command-mode-map (kbd "me") (lambda () (interactive) (push-mark (line-end-position) nil t)))
+  (define-key my-command-mode-map (kbd "mm") (lambda () (interactive) (save-excursion (back-to-indentation) (push-mark nil nil t))))
+  (define-key my-command-mode-map (kbd "ma") (lambda () (interactive) (push-mark (line-beginning-position) nil t)))
+  (define-key my-command-mode-map (kbd "ml") #'tyler/mark-whole-line)
+  (define-key my-command-mode-map (kbd "m.") #'mark-defun)
+  ;; kill/yank
+  (define-key my-command-mode-map (kbd "kd") #'delete-char)
+  (define-key my-command-mode-map (kbd "kf") #'kill-word)
+  (define-key my-command-mode-map (kbd "kb") #'backward-kill-word)
+  (define-key my-command-mode-map (kbd "kw") (lambda () (interactive) (backward-word) (call-interactively 'kill-word)))
+  (define-key my-command-mode-map (kbd "kj") #'kill-sexp)
+  (define-key my-command-mode-map (kbd "kh") #'backward-kill-sexp)
+  (define-key my-command-mode-map (kbd "ks") (lambda () (interactive) (backward-sexp) (call-interactively 'kill-sexp)))
+  (define-key my-command-mode-map (kbd "ke") #'kill-line)
+  (define-key my-command-mode-map (kbd "km") (lambda () (interactive) (kill-line 0) (call-interactively 'indent-for-tab-command)))
+  (define-key my-command-mode-map (kbd "ka") (lambda () (interactive) (kill-line 0)))
+  (define-key my-command-mode-map (kbd "kl") #'tyler/kill-whole-line)
+  (define-key my-command-mode-map (kbd "kp") (tyler/repeat-command 'delete-indentation))
+  (define-key my-command-mode-map (kbd "kr") #'kill-region)
+  (define-key my-command-mode-map (kbd "y") #'yank)
+  (define-key my-command-mode-map (kbd "gy") #'consult-yank-replace)
+  ;; copy
+  (define-key my-command-mode-map (kbd "cf") (tyler/kill-ring-save nil 'forward-word))
+  (define-key my-command-mode-map (kbd "cb") (tyler/kill-ring-save 'backward-word nil))
+  (define-key my-command-mode-map (kbd "cw") (tyler/kill-ring-save 'backward-word 'forward-word))
+  (define-key my-command-mode-map (kbd "cj") (tyler/kill-ring-save nil 'forward-sexp))
+  (define-key my-command-mode-map (kbd "ch") (tyler/kill-ring-save 'backward-sexp nil))
+  (define-key my-command-mode-map (kbd "cs") (tyler/kill-ring-save 'backward-sexp 'forward-sexp))
+  (define-key my-command-mode-map (kbd "ce") (tyler/kill-ring-save nil 'end-of-line))
+  (define-key my-command-mode-map (kbd "cm") (tyler/kill-ring-save 'back-to-indentation nil))
+  (define-key my-command-mode-map (kbd "ca") (tyler/kill-ring-save 'beginning-of-line nil))
+  (define-key my-command-mode-map (kbd "cl") #'tyler/copy-whole-line)
+  (define-key my-command-mode-map (kbd "cr") #'kill-ring-save)
+  (define-key my-command-mode-map (kbd "cn") #'duplicate-dwim)
+  ;; transpose
+  (define-key my-command-mode-map (kbd "tf") #'transpose-words)
+  (define-key my-command-mode-map (kbd "tb") (tyler/invert-command 'transpose-words))
+  (define-key my-command-mode-map (kbd "tj") #'transpose-sexps)
+  (define-key my-command-mode-map (kbd "th") (tyler/invert-command 'transpose-sexps))
+  (define-key my-command-mode-map (kbd "tn") #'tyler/transpose-lines)
+  (define-key my-command-mode-map (kbd "tp") (tyler/invert-command 'tyler/transpose-lines))
+  ;; file/buffer/window
+  (define-key my-command-mode-map (kbd "xb") #'switch-to-buffer)
+  (define-key my-command-mode-map (kbd "xs") #'save-buffer)
+  (define-key my-command-mode-map (kbd "xf") #'find-file)
+  (define-key my-command-mode-map (kbd "xk") #'kill-buffer)
+  (define-key my-command-mode-map (kbd "xd") #'dired-jump)
+  (define-key my-command-mode-map (kbd "x1") #'delete-other-windows)
+  (define-key my-command-mode-map (kbd "x2") #'split-window-below)
+  (define-key my-command-mode-map (kbd "x3") #'split-window-right)
+  (define-key my-command-mode-map (kbd "xo") #'other-window)
+  (define-key my-command-mode-map (kbd "xpf") #'project-find-file)
+  (define-key my-command-mode-map (kbd "xpg") #'project-find-regexp)
+  (define-key my-command-mode-map (kbd "xpp") #'project-switch-project))
+
 ;; Custom functions
-
-(defun my-move-line-up()
-  "Move the current line up one."
-  (interactive)
+(defun tyler/transpose-lines (arg)
+  "Move the current line down one. With prefix, move that many lines down. With negative prefix, move up."
+  (interactive "p")
   (let ((col (current-column)))
-    (save-excursion (forward-line)
-      (transpose-lines -1))
-    (forward-line -1)
-    (if (> col 0)
-        (forward-line -1))
-    (move-to-column col)))
-
-(defun my-move-line-down()
-  "Move the current line down one."
-  (interactive)
-  (let ((col (current-column)))
-    (save-excursion (forward-line)
-      (transpose-lines 1))
     (forward-line)
+    (transpose-lines arg)
+    (forward-line -1)
     (move-to-column col)))
+
+(defun tyler/kill-whole-line ()
+  "Kill the current line. With prefix, kill current line and that many lines from current."
+  (interactive)
+  (let* ((numeric-prefix (prefix-numeric-value current-prefix-arg))
+         (current-prefix-arg (cond
+                              ((null current-prefix-arg) current-prefix-arg)
+                              ((< numeric-prefix 0) (- numeric-prefix 1))
+                              ((> numeric-prefix 0) (+ numeric-prefix 1))
+                              (t numeric-prefix))))
+    (call-interactively 'kill-whole-line)))
+
+(defun tyler/mark-whole-line ()
+  "Mark the current line starting from indentation. With prefix, mark current line and that many lines from current."
+  (interactive)
+  (let ((negative (< (prefix-numeric-value current-prefix-arg) 0)))
+    (if negative (end-of-line) (back-to-indentation))
+    (push-mark nil nil t)
+    (or (null current-prefix-arg) (call-interactively 'next-line))
+    (if negative
+        (back-to-indentation)
+      (progn
+        (end-of-line)
+        (exchange-point-and-mark)))))
+
+(defun tyler/copy-whole-line (arg)
+  "Copy the current line. With prefix, copy current line and that many lines from current."
+  (interactive "P")
+  (let* ((numeric-prefix (prefix-numeric-value arg))
+         (beginning (line-beginning-position (when (< numeric-prefix 0) (+ numeric-prefix 1))))
+         (end (line-end-position (when
+                                     (and
+                                      (not (null arg))
+                                      (> numeric-prefix 0))
+                                   (+ 1 numeric-prefix)))))
+         (kill-ring-save beginning end))
+  (message "Copied"))
 
 ;; (defun tyler/swap-windows (&optional other-win)
 ;;   "Swap the buffers displayed in the current window and OTHER-WIN.
@@ -332,41 +510,41 @@ instead of buffer lines."
 ;;     (select-window other-win)
 ;;     (switch-to-buffer current-buf)))
 
-;; (defun tyler/split-window-sensibly (&optional window)
-;;   "Copy/paste of `split-window-sensibly', but whereas that function
-;; prefers a horizontal divider when horizontal and vertical are both
-;; possible, this function prefers a vertical one."
-;;   (let ((window (or window (selected-window))))
-;;     (or (and (window-splittable-p window t)
-;;             ;; Split window horizontally.
-;;             (with-selected-window window
-;;               (split-window-right)))
-;;         (and (window-splittable-p window)
-;;             ;; Split window vertically.
-;;             (with-selected-window window
-;;               (split-window-below)))
-;;        (and
-;;          ;; If WINDOW is the only usable window on its frame (it is
-;;          ;; the only one or, not being the only one, all the other
-;;          ;; ones are dedicated) and is not the minibuffer window, try
-;;          ;; to split it vertically disregarding the value of
-;;          ;; `split-height-threshold'.
-;;          (let ((frame (window-frame window)))
-;;            (or
-;;             (eq window (frame-root-window frame))
-;;             (catch 'done
-;;               (walk-window-tree (lambda (w)
-;;                                   (unless (or (eq w window)
-;;                                               (window-dedicated-p w))
-;;                                     (throw 'done nil)))
-;;                                 frame nil 'nomini)
-;;               t)))
-;;         (not (window-minibuffer-p window))
-;;         (let ((split-height-threshold 0))
-;;           (when (window-splittable-p window)
-;;             (with-selected-window window
-;;               (split-window-below))))))))
-;; (setopt split-window-preferred-function 'tyler/split-window-sensibly)
+(defun tyler/split-window-sensibly (&optional window)
+  "Copy/paste of `split-window-sensibly', but whereas that function
+prefers a horizontal divider when horizontal and vertical are both
+possible, this function prefers a vertical one."
+  (let ((window (or window (selected-window))))
+    (or (and (window-splittable-p window t)
+            ;; Split window horizontally.
+            (with-selected-window window
+              (split-window-right)))
+        (and (window-splittable-p window)
+            ;; Split window vertically.
+            (with-selected-window window
+              (split-window-below)))
+       (and
+         ;; If WINDOW is the only usable window on its frame (it is
+         ;; the only one or, not being the only one, all the other
+         ;; ones are dedicated) and is not the minibuffer window, try
+         ;; to split it vertically disregarding the value of
+         ;; `split-height-threshold'.
+         (let ((frame (window-frame window)))
+           (or
+            (eq window (frame-root-window frame))
+            (catch 'done
+              (walk-window-tree (lambda (w)
+                                  (unless (or (eq w window)
+                                              (window-dedicated-p w))
+                                    (throw 'done nil)))
+                                frame nil 'nomini)
+              t)))
+        (not (window-minibuffer-p window))
+        (let ((split-height-threshold 0))
+          (when (window-splittable-p window)
+            (with-selected-window window
+              (split-window-below))))))))
+(setopt split-window-preferred-function 'tyler/split-window-sensibly)
 
 
 ;; (defun tyler/expand-region ()
@@ -380,13 +558,24 @@ instead of buffer lines."
   (command-execute 'org-table-create-or-convert-from-region)
   (command-execute 'org-table-transpose-table-at-point))
 
+(defun tyler/scroll-half-page-down ()
+  "scroll down half the page"
+  (interactive)
+  (scroll-down (/ (window-body-height) 2)))
+
+(defun tyler/scroll-half-page-up ()
+  "scroll up half the page"
+  (interactive)
+  (scroll-up (/ (window-body-height) 2)))
+
 (use-package emacs
   :init
+  (setq-default display-line-numbers 'relative)
   ;; prefer spaces-only indentation
   (setq-default indent-tabs-mode nil)
   ;; bind-key* makes sure this binding overrides any other mode's bindings.
-  (bind-key* "C-c p" 'my-move-line-up)
-  (bind-key* "C-c n" 'my-move-line-down)
+  (bind-key* "C-c p" (tyler/invert-command 'tyler/transpose-lines))
+  (bind-key* "C-c n" 'tyler/transpose-lines)
   (bind-key* "C-c j" 'duplicate-dwim)
   (bind-key* "<up>" 'scroll-down-line)
   (bind-key* "<down>" 'scroll-up-line)
@@ -399,7 +588,9 @@ instead of buffer lines."
   (bind-key* "C-c i" 'ibuffer)
   (bind-key* "M-%" 'query-replace-regexp)
   (bind-key* "C-z" 'undo)
-
+  (bind-key* "<remap> <scroll-up-command>" 'tyler/scroll-half-page-up)
+  (bind-key* "<remap> <scroll-down-command>" 'tyler/scroll-half-page-down)
+  
   ;; remove toolbar, menu bar
   (if (fboundp 'tool-bar-mode)
       (tool-bar-mode 0))
@@ -427,10 +618,12 @@ instead of buffer lines."
   ; Don't want any backup files
   (setq make-backup-files nil)
 
+  ; Enable completion-preview-mode (causes gray text to appear after point when autocompleting).
+  ;; (global-completion-preview-mode)
+
   :custom-face
   (completions-annotations ((t (:foreground "powderblue" :underline nil))))
   (error ((t (:foreground "tomato" :weight bold))))
-  (header-line ((t (:background "color-235" :inverse-video nil :underline t))))
   (mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "burlywood1" :background "#56514c"))))
   (mode-line-inactive ((t (:foreground "gray60" :background "gray15" :inherit mode-line)))))
 
@@ -440,4 +633,16 @@ instead of buffer lines."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(rainbow-mode corfu wfnames vertico svelte-mode restclient orderless multiple-cursors markdown-mode marginalia flymake-eslint expand-region embark-consult company avy async)))
+   '(avy corfu embark-consult expand-region flymake-eslint god-mode
+         marginalia markdown-mode multiple-cursors orderless
+         rainbow-mode restclient svelte-mode terraform-mode vertico
+         vue-ts-mode))
+ '(package-vc-selected-packages
+   '((vue-ts-mode :url "https://github.com/8uff3r/vue-ts-mode" :branch
+                  "main"))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(hl-line ((t (:background "gray24")))))

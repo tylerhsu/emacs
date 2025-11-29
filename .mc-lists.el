@@ -18,6 +18,7 @@
         rjsx-electric-gt
         tabbar-backward-tab
         tyler/expand-region
+        up-list
         xterm-paste
         yaml-electric-backspace
         yaml-electric-bar-and-angle
@@ -28,8 +29,10 @@
         beginning-of-buffer
         comint-delchar-or-maybe-eof
         comment-dwim
+        consult-buffer
         electric-newline-and-maybe-indent
         find-file
+        flymake-goto-next-error
         helm-mini
         helm-projectile
         js2-mode-hide-element
@@ -39,4 +42,7 @@
         scroll-up-line
         sgml-slash
         suspend-frame
+        tyler/mark-more-like-this
+        tyler/mark-previous-like-this
+        tyler/mc-toggle-repeat
         ))
