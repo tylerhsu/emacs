@@ -36,6 +36,7 @@
         helm-mini
         helm-projectile
         js2-mode-hide-element
+        my-command-mode-all
         org-delete-char
         python-indent-dedent-line
         scroll-down-line

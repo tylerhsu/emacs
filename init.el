@@ -17,8 +17,8 @@
     (dolist (grammar
              ;; js, ts, and tsx are pinned because the immediate subsequent versions resulted in broken syntax highlighting.
              '((javascript . ("https://github.com/tree-sitter/tree-sitter-javascript" "v0.20.1" "src"))
-               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "typescript/src")
-               (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "tsx/src"))
+               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "typescript/src")
+               (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "tsx/src"))
                (python "https://github.com/tree-sitter/tree-sitter-python")
                (go "https://github.com/tree-sitter/tree-sitter-go")
                (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
@@ -99,8 +99,7 @@
 
                          ;; electric indent mode indents both the new line and the previous line when
                          ;; you press enter. Indent only the new line.
-                         (electric-indent-mode 0)
-                         (subword-mode)
+                         ;; (electric-indent-mode 0)
                          ; Enable popup autocomplete
                          (corfu-mode +1)))
   :vc (:url "https://github.com/8uff3r/vue-ts-mode"
@@ -220,13 +219,14 @@
                              (setq-local tab-width 2))))
 
 (use-package prog-mode
-  :bind ("RET" . 'electric-newline-and-maybe-indent)
+  ;; :bind ("RET" . 'electric-newline-and-maybe-indent)
   :hook (prog-mode . (lambda()
                        ;; electric indent mode indents both the new line and the previous line when
                        ;; you press enter. Indent only the new line.
-                       (electric-indent-mode 0)
-                       (subword-mode)
-                       ; Enable popup autocomplete
+                       ;; (electric-indent-mode 0)
+                       ;; Auto-insert closing brackets
+                       (electric-pair-mode 1)
+                       ;; Enable popup autocomplete
                        (corfu-mode +1)
                        (setq-local tab-width 2))))
 
@@ -292,6 +292,21 @@ instead of buffer lines."
   :mode "\\.prisma\\'"
   :load-path ("site-lisp/prisma-mode"))
 
+;; (use-package electric
+;;   :config
+;;   (defun tyler/electric-pair-indent-closing-brace ()
+;;     "Indents the next line if it contains a closing delimiter.
+;; Only runs if `electric-pair-mode' is enabled."
+;;     (when (and electric-pair-mode
+;;                (eq last-command-event ?\n))
+;;       (save-excursion
+;;         (forward-line 1)
+;;         (skip-chars-forward " \t")
+;;         (when (eq (char-syntax (char-after)) ?\))
+;;           (indent-according-to-mode)))))
+
+;;   (add-hook 'post-self-insert-hook #'my/electric-pair-indent-closing-brace))
+
 (defun tyler/invert-command (command)
   "Return a version of COMMAND that inverts the sign on the prefix."
   (lambda ()
@@ -326,8 +341,8 @@ instead of buffer lines."
 
 (use-package my-command-mode
   :load-path ("site-lisp")
-  :bind (("C-;" . #'my-command-mode-all))
   :config
+  (bind-key* "C-j" #'my-command-mode-all)
   ;; move
   (define-key my-command-mode-map (kbd "n") #'next-line)
   (define-key my-command-mode-map (kbd "p") #'previous-line)
@@ -335,12 +350,13 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "b") #'backward-word)
   (define-key my-command-mode-map (kbd "j") #'forward-sexp)
   (define-key my-command-mode-map (kbd "h") #'backward-sexp)
-  (define-key my-command-mode-map (kbd "a") #'back-to-indentation)
+  (define-key my-command-mode-map (kbd "a") #'beginning-of-line)
+  (define-key my-command-mode-map (kbd "m") #'back-to-indentation)
   (define-key my-command-mode-map (kbd "e") #'end-of-line)
   (define-key my-command-mode-map (kbd "d") #'down-list)
   (define-key my-command-mode-map (kbd "u") #'up-list)
-  (define-key my-command-mode-map (kbd ",") #'beginning-of-defun)
-  (define-key my-command-mode-map (kbd ".") #'end-of-defun)
+  (define-key my-command-mode-map (kbd ",") (tyler/repeat-command #'xref-go-back #'xref-go-forward))
+  (define-key my-command-mode-map (kbd ".") #'xref-find-definitions)
   (define-key my-command-mode-map (kbd "<") #'beginning-of-buffer)
   (define-key my-command-mode-map (kbd ">") #'end-of-buffer)
   (define-key my-command-mode-map (kbd "s") #'isearch-forward)
@@ -352,6 +368,9 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "[") #'point-to-register)
   (define-key my-command-mode-map (kbd "]") #'jump-to-register)
   (define-key my-command-mode-map (kbd "co") (lambda () (interactive) (call-interactively 'isearch-occur) (call-interactively 'other-window)))
+  (define-key my-command-mode-map (kbd "gfn") #'flymake-goto-next-error)
+  (define-key my-command-mode-map (kbd "gfp") #'flymake-goto-prev-error)
+  (define-key my-command-mode-map (kbd "gfl") #'flymake-show-project-diagnostics)
   ;; misc
   (define-key my-command-mode-map (kbd "gs") #'query-replace-regexp)
   (define-key my-command-mode-map (kbd ";") #'comment-line)
@@ -362,24 +381,25 @@ instead of buffer lines."
   ;; insert
   (define-key my-command-mode-map (kbd "i") (lambda () (interactive) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "P") (lambda () (interactive) (beginning-of-line) (open-line 1) (indent-for-tab-command) (my-command-mode-all -1)))
-  (define-key my-command-mode-map (kbd "N") (lambda () (interactive) (end-of-line) (electric-newline-and-maybe-indent) (my-command-mode-all -1)))
+  (define-key my-command-mode-map (kbd "N") (lambda () (interactive) (end-of-line) (newline) (indent-for-tab-command) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "E") (lambda () (interactive) (end-of-line) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "A") (lambda () (interactive) (beginning-of-line) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "M") (lambda () (interactive) (back-to-indentation) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "O") (lambda () (interactive) (overwrite-mode) (my-command-mode-all -1)))
   ;; mark
-  (define-key my-command-mode-map (kbd "SPC") #'set-mark-command)
-  (define-key my-command-mode-map (kbd "mf") #'mark-word)
-  (define-key my-command-mode-map (kbd "mb") (tyler/invert-command 'mark-word))
-  (define-key my-command-mode-map (kbd "mw") (lambda () (interactive) (backward-word) (call-interactively 'mark-word)))
-  (define-key my-command-mode-map (kbd "mj") #'mark-sexp)
-  (define-key my-command-mode-map (kbd "mh") (tyler/invert-command 'mark-sexp))
-  (define-key my-command-mode-map (kbd "ms") (lambda () (interactive) (backward-sexp) (call-interactively 'mark-sexp)))
-  (define-key my-command-mode-map (kbd "me") (lambda () (interactive) (push-mark (line-end-position) nil t)))
-  (define-key my-command-mode-map (kbd "mm") (lambda () (interactive) (save-excursion (back-to-indentation) (push-mark nil nil t))))
-  (define-key my-command-mode-map (kbd "ma") (lambda () (interactive) (push-mark (line-beginning-position) nil t)))
-  (define-key my-command-mode-map (kbd "ml") #'tyler/mark-whole-line)
-  (define-key my-command-mode-map (kbd "m.") #'mark-defun)
+  (define-key my-command-mode-map (kbd "SPC SPC") #'set-mark-command)
+  (define-key my-command-mode-map (kbd "SPC r") #'set-rectangular-region-anchor)
+  (define-key my-command-mode-map (kbd "SPC f") #'mark-word)
+  (define-key my-command-mode-map (kbd "SPC b") (tyler/invert-command 'mark-word))
+  (define-key my-command-mode-map (kbd "SPC w") (lambda () (interactive) (backward-word) (call-interactively 'mark-word)))
+  (define-key my-command-mode-map (kbd "SPC j") #'mark-sexp)
+  (define-key my-command-mode-map (kbd "SPC h") (tyler/invert-command 'mark-sexp))
+  (define-key my-command-mode-map (kbd "SPC s") (lambda () (interactive) (backward-sexp) (call-interactively 'mark-sexp)))
+  (define-key my-command-mode-map (kbd "SPC e") (lambda () (interactive) (push-mark (line-end-position) nil t)))
+  (define-key my-command-mode-map (kbd "SPC m") (lambda () (interactive) (save-excursion (back-to-indentation) (push-mark nil nil t))))
+  (define-key my-command-mode-map (kbd "SPC a") (lambda () (interactive) (push-mark (line-beginning-position) nil t)))
+  (define-key my-command-mode-map (kbd "SPC l") #'tyler/mark-whole-line)
+  (define-key my-command-mode-map (kbd "SPC d") #'mark-defun)
   ;; kill/yank
   (define-key my-command-mode-map (kbd "kd") #'delete-char)
   (define-key my-command-mode-map (kbd "kf") #'kill-word)
@@ -570,7 +590,6 @@ possible, this function prefers a vertical one."
 
 (use-package emacs
   :init
-  (setq-default display-line-numbers 'relative)
   ;; prefer spaces-only indentation
   (setq-default indent-tabs-mode nil)
   ;; bind-key* makes sure this binding overrides any other mode's bindings.
@@ -585,11 +604,15 @@ possible, this function prefers a vertical one."
   (bind-key* "C-h z" 'shortdoc-display-group)
   (bind-key* "C-c b" 'scratch-buffer)
   (bind-key* "C-c l" 'display-line-numbers-mode)
+  (bind-key* "C-c L" (lambda () (interactive) (setq display-line-numbers (if (eq display-line-numbers 'absolute) 'relative 'absolute))))
   (bind-key* "C-c i" 'ibuffer)
   (bind-key* "M-%" 'query-replace-regexp)
   (bind-key* "C-z" 'undo)
   (bind-key* "<remap> <scroll-up-command>" 'tyler/scroll-half-page-up)
   (bind-key* "<remap> <scroll-down-command>" 'tyler/scroll-half-page-down)
+
+  (setq-default display-line-numbers-type 'relative)
+  (global-display-line-numbers-mode 1)
   
   ;; remove toolbar, menu bar
   (if (fboundp 'tool-bar-mode)
@@ -608,6 +631,8 @@ possible, this function prefers a vertical one."
 
   ;; typing replaces selection
   (delete-selection-mode 1)
+
+  (global-subword-mode 1)
 
   ;; go right to an empty buffer
   (setq inhibit-startup-message t)
