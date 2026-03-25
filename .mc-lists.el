@@ -36,6 +36,7 @@
         helm-mini
         helm-projectile
         js2-mode-hide-element
+        markdown-outdent-or-delete
         my-command-mode-all
         org-delete-char
         python-indent-dedent-line

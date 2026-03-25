@@ -65,6 +65,13 @@
   (bind-key* "C-c f n" 'flymake-goto-next-error)
   (bind-key* "C-c f p" 'flymake-goto-prev-error))
 
+(use-package project
+  :config
+  ;; Files that signal a project root. Eglot uses project to find the project root, then the language server starts looking for configs like tsconfig.json from that root.
+  ;; Without this, eglot only sets up correctly when the project is a git repo.
+  (add-to-list 'project-vc-extra-root-markers "package.json")
+  (add-to-list 'project-vc-extra-root-markers "tsconfig.json"))
+
 (use-package flymake-eslint
   :ensure t
   :hook
@@ -225,7 +232,7 @@
                        ;; you press enter. Indent only the new line.
                        ;; (electric-indent-mode 0)
                        ;; Auto-insert closing brackets
-                       (electric-pair-mode 1)
+                       ;; (electric-pair-mode 1)
                        ;; Enable popup autocomplete
                        (corfu-mode +1)
                        (setq-local tab-width 2))))
@@ -342,7 +349,7 @@ instead of buffer lines."
 (use-package my-command-mode
   :load-path ("site-lisp")
   :config
-  (bind-key* "C-j" #'my-command-mode-all)
+  (bind-key* "C-j" (lambda () (interactive) (my-command-mode-all 1)))
   ;; move
   (define-key my-command-mode-map (kbd "n") #'next-line)
   (define-key my-command-mode-map (kbd "p") #'previous-line)
@@ -376,8 +383,8 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd ";") #'comment-line)
   (define-key my-command-mode-map (kbd "z") #'undo)
   (define-key my-command-mode-map (kbd "/") #'fixup-whitespace)
-  (define-key my-command-mode-map (kbd "(") #'kmacro-start-macro)
-  (define-key my-command-mode-map (kbd ")") #'kmacro-end-and-call-macro)
+  (define-key my-command-mode-map (kbd "g9") #'kmacro-start-macro)
+  (define-key my-command-mode-map (kbd "g0") #'kmacro-end-or-call-macro)
   ;; insert
   (define-key my-command-mode-map (kbd "i") (lambda () (interactive) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "P") (lambda () (interactive) (beginning-of-line) (open-line 1) (indent-for-tab-command) (my-command-mode-all -1)))
@@ -445,6 +452,7 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "x1") #'delete-other-windows)
   (define-key my-command-mode-map (kbd "x2") #'split-window-below)
   (define-key my-command-mode-map (kbd "x3") #'split-window-right)
+  (define-key my-command-mode-map (kbd "x0") #'delete-window)
   (define-key my-command-mode-map (kbd "xo") #'other-window)
   (define-key my-command-mode-map (kbd "xpf") #'project-find-file)
   (define-key my-command-mode-map (kbd "xpg") #'project-find-regexp)
@@ -471,18 +479,18 @@ instead of buffer lines."
                               (t numeric-prefix))))
     (call-interactively 'kill-whole-line)))
 
-(defun tyler/mark-whole-line ()
+(defun tyler/mark-whole-line (arg)
   "Mark the current line starting from indentation. With prefix, mark current line and that many lines from current."
-  (interactive)
-  (let ((negative (< (prefix-numeric-value current-prefix-arg) 0)))
-    (if negative (end-of-line) (back-to-indentation))
-    (push-mark nil nil t)
-    (or (null current-prefix-arg) (call-interactively 'next-line))
-    (if negative
-        (back-to-indentation)
-      (progn
-        (end-of-line)
-        (exchange-point-and-mark)))))
+  (interactive "P")
+  (let* ((numeric-prefix (prefix-numeric-value arg))
+         (beginning (line-beginning-position (when (< numeric-prefix 0) (+ numeric-prefix 1))))
+         (end (line-end-position (when
+                                     (and
+                                      (not (null arg))
+                                      (> numeric-prefix 0))
+                                   (+ 1 numeric-prefix)))))
+    (goto-char beginning)
+    (push-mark end nil t)))
 
 (defun tyler/copy-whole-line (arg)
   "Copy the current line. With prefix, copy current line and that many lines from current."

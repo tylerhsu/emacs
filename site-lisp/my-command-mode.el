@@ -27,7 +27,8 @@
     sly-db-mode
     vc-annotate-mode
     occur-mode
-    wdired-mode)
+    wdired-mode
+    xref--xref-buffer-mode)
   "List of major modes that should not start with `my-command-mode' enabled.")
 
 (defun my-command-mode-if-appropriate (&optional arg)
