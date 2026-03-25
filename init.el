@@ -57,6 +57,7 @@
   (setopt eglot-events-buffer-size 0)
   (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+  (add-to-list 'eglot-server-programs '((python-mode python-ts-mode) . ("pyright-langserver" "--stdio")))
   :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure))
 
 (use-package flymake
@@ -183,6 +184,10 @@
 ;; for the given command.
 (use-package consult
   :ensure t
+  :init
+  ;; Open xref stuff in a consult minibuffer instead of an *xref* buffer.
+  (setq xref-show-xrefs-function #'consult-xref)
+  (setq xref-show-xrefs-definitions #'consult-xref)
   :bind (("<remap> <switch-to-buffer>" . consult-buffer)
          ("<remap> <yank-pop>" . consult-yank-replace)
 				 ("<remap> <imenu>" . consult-imenu-multi)))
@@ -366,6 +371,8 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "ge") #'end-of-defun)
   (define-key my-command-mode-map (kbd ",") (tyler/repeat-command #'xref-go-back #'xref-go-forward))
   (define-key my-command-mode-map (kbd ".") #'xref-find-definitions)
+  (define-key my-command-mode-map (kbd "g.") #'xref-find-apropos)
+  (define-key my-command-mode-map (kbd "?") #'xref-find-references)
   (define-key my-command-mode-map (kbd "<") #'beginning-of-buffer)
   (define-key my-command-mode-map (kbd ">") #'end-of-buffer)
   (define-key my-command-mode-map (kbd "s") #'isearch-forward)
@@ -690,11 +697,7 @@ possible, this function prefers a vertical one."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(avy corfu embark-consult expand-region flymake-eslint
-         marginalia markdown-mode multiple-cursors orderless
-         rainbow-mode restclient svelte-mode terraform-mode vertico
-         vue-ts-mode))
+ '(package-selected-packages nil)
  '(package-vc-selected-packages
    '((vue-ts-mode :url "https://github.com/8uff3r/vue-ts-mode" :branch
                   "main"))))
