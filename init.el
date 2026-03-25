@@ -362,6 +362,8 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "e") #'end-of-line)
   (define-key my-command-mode-map (kbd "d") #'down-list)
   (define-key my-command-mode-map (kbd "u") #'up-list)
+  (define-key my-command-mode-map (kbd "ga") #'beginning-of-defun)
+  (define-key my-command-mode-map (kbd "ge") #'end-of-defun)
   (define-key my-command-mode-map (kbd ",") (tyler/repeat-command #'xref-go-back #'xref-go-forward))
   (define-key my-command-mode-map (kbd ".") #'xref-find-definitions)
   (define-key my-command-mode-map (kbd "<") #'beginning-of-buffer)
@@ -459,6 +461,28 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "xpp") #'project-switch-project))
 
 ;; Custom functions
+(defun tyler/open-line-between-delimiters ()
+  "Open an indented line between matching delimiters.
+Point should follow one or more opening delimiters (e.g. {, ([).
+Inserts a newline, indents point, then inserts the matching
+closing delimiters in reverse order on the next line at the
+appropriate indentation."
+  (interactive)
+  (let ((close-chars '()))
+    (save-excursion
+      (while (let ((c (char-before)))
+               (and c (matching-paren c)))
+        (setq close-chars (append close-chars (list (matching-paren (char-before)))))
+        (backward-char)))
+    (unless close-chars
+      (user-error "No opening delimiters before point"))
+    (newline)
+    (save-excursion
+      (newline)
+      (insert (apply #'string close-chars))
+      (indent-according-to-mode))
+    (indent-according-to-mode)))
+
 (defun tyler/transpose-lines (arg)
   "Move the current line down one. With prefix, move that many lines down. With negative prefix, move up."
   (interactive "p")
@@ -615,6 +639,7 @@ possible, this function prefers a vertical one."
   (bind-key* "C-c L" (lambda () (interactive) (setq display-line-numbers (if (eq display-line-numbers 'absolute) 'relative 'absolute))))
   (bind-key* "C-c i" 'ibuffer)
   (bind-key* "M-%" 'query-replace-regexp)
+  (bind-key* "M-RET" 'tyler/open-line-between-delimiters)
   (bind-key* "C-z" 'undo)
   (bind-key* "<remap> <scroll-up-command>" 'tyler/scroll-half-page-up)
   (bind-key* "<remap> <scroll-down-command>" 'tyler/scroll-half-page-down)
