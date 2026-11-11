@@ -9,6 +9,14 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
+;; Emacs 30's built-in eglot (1.17) never asks servers for diagnostics, and TypeScript 7's
+;; server only gives them when asked, so TS files would show no errors at all. `:ensure t'
+;; counts the built-in as installed, so upgrade it from GNU ELPA explicitly.
+(unless (package-installed-p 'eglot '(1 26))
+  (unless package-archive-contents (package-refresh-contents))
+  (let ((package-install-upgrade-built-in t))
+    (package-install 'eglot)))
+
 (use-package treesit
   :preface
   (defun tyler/treesit-install-grammars ()
@@ -51,6 +59,107 @@
   (avy-lead-face-2 ((t (:foreground "#e52b50" :background "unset"))))
   (avy-goto-char-timer-face ((t (:foreground "black")))))
 
+;; JS/TS language server, always using the project's own TypeScript (never a global one):
+;; - TypeScript < 7: typescript-language-server, pointed explicitly at the project's tsserver.js.
+;; - TypeScript >= 7 (the Go rewrite, which has no tsserver): its own server, `tsc --lsp --stdio`,
+;;   from the project's native binary package (e.g. @typescript/typescript-darwin-arm64).
+;; - No TypeScript: in a .ts/.tsx buffer, ask whether to install it in the project; JS buffers
+;;   just get no server. If TypeScript 7 is there but without this machine's binary (node_modules
+;;   installed in a Linux container), ask whether to download the matching binary.
+
+(defvar my/typescript-declined nil
+  "Directories where I said no to installing TypeScript or its binary (asked once per session).")
+
+(defun my/typescript-version (root)
+  "Version string of ROOT/node_modules/typescript, or nil if it isn't installed."
+  (let ((pkg (expand-file-name "node_modules/typescript/package.json" root)))
+    (when (file-readable-p pkg)
+      (with-temp-buffer
+        (insert-file-contents pkg)
+        (gethash "version" (json-parse-buffer))))))
+
+(defun my/typescript-native-package ()
+  "TypeScript 7's binary package for this machine, e.g. \"@typescript/typescript-darwin-arm64\"."
+  (format "@typescript/typescript-%s-%s"
+          (if (eq system-type 'darwin) "darwin" "linux")
+          (if (string-prefix-p "aarch64" system-configuration) "arm64" "x64")))
+
+(defun my/typescript-run (dir program &rest args)
+  "Run PROGRAM with ARGS in DIR, showing its output and signaling an error if it fails."
+  (unless (executable-find program)
+    (user-error "Can't find `%s' to install TypeScript with" program))
+  (let ((buf (get-buffer-create "*typescript install*"))
+        (default-directory (file-name-as-directory dir)))
+    (with-current-buffer buf
+      (goto-char (point-max))
+      (insert (format "\n$ cd %s && %s\n" dir (string-join (cons program args) " "))))
+    (message "Running %s %s..." program (string-join args " "))
+    (unless (eql 0 (apply #'process-file program nil buf t args))
+      (display-buffer buf)
+      (user-error "`%s %s' failed; see *typescript install*" program (string-join args " ")))))
+
+(defun my/typescript-ask (dir prompt)
+  "Ask PROMPT once per session for DIR; a no is remembered and signals an error."
+  (when (or (member dir my/typescript-declined)
+            (not (y-or-n-p prompt)))
+    (add-to-list 'my/typescript-declined dir)
+    (user-error "No project TypeScript for %s; not starting a language server" dir)))
+
+(defun my/typescript-install (project)
+  "Offer to install TypeScript in the current buffer's project; return the directory it's in."
+  (let ((dir (abbreviate-file-name
+              (or (locate-dominating-file default-directory "package.json")
+                  (and project (project-root project))
+                  default-directory))))
+    (unless (and buffer-file-name (string-match-p "\\.[cm]?tsx?\\'" buffer-file-name))
+      (user-error "No project TypeScript for %s; not starting a language server" dir))
+    (let ((command (cond ((or (file-exists-p (expand-file-name "bun.lock" dir))
+                              (file-exists-p (expand-file-name "bun.lockb" dir)))
+                          '("bun" "add" "--dev" "typescript"))
+                         ((file-exists-p (expand-file-name "pnpm-lock.yaml" dir))
+                          '("pnpm" "add" "--save-dev" "typescript"))
+                         ((file-exists-p (expand-file-name "yarn.lock" dir))
+                          '("yarn" "add" "--dev" "typescript"))
+                         (t '("npm" "install" "--save-dev" "typescript")))))
+      (my/typescript-ask dir (format "No TypeScript found for %s. Install it there (%s)? "
+                                     dir (string-join command " ")))
+      (apply #'my/typescript-run dir command)
+      (unless (my/typescript-version dir)
+        (user-error "Installed, but %snode_modules/typescript still isn't there" dir))
+      dir)))
+
+(defun my/typescript-fetch-native (root version)
+  "Offer to download TypeScript VERSION's binary for this machine into ROOT/node_modules."
+  (let* ((package (my/typescript-native-package))
+         (spec (format "%s@%s" package version))
+         (dest (expand-file-name (concat "node_modules/" package) root))
+         (tmp (make-temp-file "typescript-native" t)))
+    (my/typescript-ask root (format "TypeScript %s in %s has no binary for this machine (node_modules \
+installed elsewhere, e.g. in a container?). Download %s into its node_modules? " version root spec))
+    (unwind-protect
+        (progn
+          (my/typescript-run tmp "npm" "pack" "--silent" spec)
+          (make-directory dest t)
+          (my/typescript-run dest "tar" "-xzf" (car (directory-files tmp t "\\.tgz\\'"))
+                             "--strip-components=1"))
+      (delete-directory tmp t))))
+
+(defun my/typescript-server-contact (&optional _interactive project)
+  "Eglot server command for JS/TS, using the project's own TypeScript (see the comment above)."
+  (let* ((root (abbreviate-file-name
+                (or (locate-dominating-file default-directory "node_modules/typescript/package.json")
+                    (my/typescript-install project))))
+         (version (my/typescript-version root)))
+    (if (< (string-to-number version) 7)
+        `("typescript-language-server" "--stdio"
+          :initializationOptions
+          (:tsserver (:path ,(expand-file-name "node_modules/typescript/lib/tsserver.js" root))))
+      (let ((tsc (expand-file-name (concat "node_modules/" (my/typescript-native-package) "/lib/tsc")
+                                   root)))
+        (unless (file-executable-p tsc)
+          (my/typescript-fetch-native root version))
+        (list tsc "--lsp" "--stdio")))))
+
 (use-package eglot
   :ensure t
   :config
@@ -58,6 +167,14 @@
   (add-to-list 'eglot-server-programs '(vue-ts-mode . ("vls" "--stdio")))
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
   (add-to-list 'eglot-server-programs '((python-mode python-ts-mode) . ("pyright-langserver" "--stdio")))
+  ;; Picks the server per project; see my/typescript-server-contact.
+  (add-to-list 'eglot-server-programs
+               '(((js-mode :language-id "javascript")
+                  (js-ts-mode :language-id "javascript")
+                  (tsx-ts-mode :language-id "typescriptreact")
+                  (typescript-ts-mode :language-id "typescript")
+                  (typescript-mode :language-id "typescript"))
+                 . my/typescript-server-contact))
   :hook ((typescript-ts-mode tsx-ts-mode python-ts-mode go-ts-mode svelte-mode vue-ts-mode js-ts-mode) . #'eglot-ensure))
 
 (use-package flymake
@@ -101,6 +218,7 @@
   :ensure t)
 
 (use-package vue-ts-mode
+  :vc (:url "https://github.com/8uff3r/vue-ts-mode" :branch "main")
   :mode "\\.vue\\'"
   :hook (vue-ts-mode . (lambda()
                          ;; vue-ts-mode does not derive from prog-mode, so prog-mode hook is copied here.
