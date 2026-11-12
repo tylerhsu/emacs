@@ -762,7 +762,24 @@ otherwise win over ghostel's bindings."
   :ensure t
   :custom
   ;; Fetch the prebuilt native module on first use instead of asking.
-  (ghostel-module-auto-install 'download))
+  (ghostel-module-auto-install 'download)
+  ;; Inside ghostel, $EDITOR opens files in this Emacs (via the server below)
+  ;; instead of a nested `emacs -nw'.  C-x # finishes the edit.  Uses the
+  ;; emacsclient that ships with the running Emacs.
+  (ghostel-environment
+   (let ((client (or (locate-file "emacsclient"
+                                  (list invocation-directory
+                                        (expand-file-name "bin" invocation-directory)))
+                     "emacsclient")))
+     (list (concat "EDITOR=" client)
+           (concat "VISUAL=" client)))))
+
+;; Let emacsclient (e.g. $EDITOR in ghostel) reach this Emacs.  GUI only, so a
+;; terminal Emacs (say, one opened as $EDITOR) doesn't take the server.
+(use-package server
+  :if (display-graphic-p)
+  :config
+  (unless (server-running-p) (server-start)))
 
 (use-package ghostel-project
   :after ghostel
