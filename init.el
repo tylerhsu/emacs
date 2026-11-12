@@ -794,7 +794,9 @@ otherwise win over ghostel's bindings."
   :ensure t
   :custom
   ;; C-c TAB o: open a project in its own tab; C-c TAB s: switch tabs.
-  (tabspaces-use-filtered-buffers-as-default t)
+  ;; nil so C-x b stays `consult-buffer' (with preview); the workspace consult
+  ;; source below filters it to this tab's buffers instead.
+  (tabspaces-use-filtered-buffers-as-default nil)
   ;; Off until `tyler/load-session' restores the session, so nothing saves before.
   (tabspaces-session nil)
   ;; One session file in ~/.emacs.d, not a session file in every project root.
@@ -806,7 +808,42 @@ otherwise win over ghostel's bindings."
     (define-key my-command-mode-map (kbd "TAB") 'tabspaces-command-map)
     (define-key my-command-mode-map (kbd "<tab>") 'tabspaces-command-map))
   ;; TAB L (and C-c TAB L): load the saved session.
-  (define-key tabspaces-command-map (kbd "L") #'tyler/load-session))
+  (define-key tabspaces-command-map (kbd "L") #'tyler/load-session)
+  ;; consult-buffer lists this tab's buffers by default; `b SPC' shows all.
+  (with-eval-after-load 'consult
+    (consult-customize consult--source-buffer :hidden t :default nil)
+    (defvar consult--source-workspace
+      (list :name     "Workspace Buffers"
+            :narrow   ?w
+            :history  'buffer-name-history
+            :category 'buffer
+            :state    #'consult--buffer-state
+            :default  t
+            :items    (lambda ()
+                        (consult--buffer-query
+                         :predicate #'tabspaces--local-buffer-p
+                         :sort 'visibility
+                         :as #'buffer-name)))
+      "Buffers in the current tabspaces tab, for `consult-buffer'.")
+    (add-to-list 'consult-buffer-sources 'consult--source-workspace)))
+
+;; The tab bar is hidden, so show the current tabspace's name in the mode line,
+;; just before the buffer name: "[ebcs] init.el".
+(defvar tyler/mode-line-tabspace
+  '(:eval (when tab-bar-mode
+            (propertize (format "[%s] " (alist-get 'name (tab-bar--current-tab)))
+                        'face 'bold)))
+  "Mode line construct showing the current tab's name.")
+(put 'tyler/mode-line-tabspace 'risky-local-variable t)
+(unless (memq 'tyler/mode-line-tabspace (default-value 'mode-line-format))
+  (let* ((fmt (default-value 'mode-line-format))
+         (tail (memq 'mode-line-buffer-identification fmt)))
+    (setq-default mode-line-format
+                  (if tail
+                      (append (butlast fmt (length tail))
+                              '(tyler/mode-line-tabspace)
+                              tail)
+                    (cons 'tyler/mode-line-tabspace fmt)))))
 
 ;; Saves each terminal and its scrollback with the tabspaces session; see the
 ;; file's commentary.  Its mode is enabled by `tyler/load-session'.
