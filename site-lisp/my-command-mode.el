@@ -66,6 +66,16 @@ Toggle the mode if ARG is nil. Enable the mode If ARG is zero or a positive numb
 (define-key my-command-mode-map (kbd "9") #'digit-argument)
 (define-key my-command-mode-map (kbd "-") #'negative-argument)
 
+(defvar my-command-mode-cursor-type '(box . 4)
+  "`cursor-type' while `my-command-mode' is on.")
+
+(defvar my-command-mode-insert-cursor-type 'bar
+  "`cursor-type' while `my-command-mode' is off, i.e. typing text.")
+
+(defun my-command-mode-current-cursor-type ()
+  "The `cursor-type' for the current state of `my-command-mode'."
+  (if my-command-mode my-command-mode-cursor-type my-command-mode-insert-cursor-type))
+
 ;;;###autoload
 (define-minor-mode my-command-mode "My command mode for modal editing"
   :lighter " Command"
@@ -74,7 +84,7 @@ Toggle the mode if ARG is nil. Enable the mode If ARG is zero or a positive numb
       (progn
         (hl-line-mode +1)
         (overwrite-mode -1))
-    (progn
-      (hl-line-mode -1))))
+    (hl-line-mode -1))
+  (setq-local cursor-type (my-command-mode-current-cursor-type)))
 
 (provide 'my-command-mode)

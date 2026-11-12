@@ -772,7 +772,16 @@ otherwise win over ghostel's bindings."
                                         (expand-file-name "bin" invocation-directory)))
                      "emacsclient")))
      (list (concat "EDITOR=" client)
-           (concat "VISUAL=" client)))))
+           (concat "VISUAL=" client))))
+  :config
+  ;; ghostel resets `cursor-type' to the terminal's requested shape (a box by
+  ;; default) after every redraw, undoing my-command-mode's cursor.  Reapply
+  ;; it afterwards, but keep the cursor hidden when a program hides it.
+  (defun tyler/ghostel-command-mode-cursor (&rest _)
+    (when (and cursor-type (fboundp 'my-command-mode-current-cursor-type))
+      (setq cursor-type (my-command-mode-current-cursor-type))))
+  (advice-add 'ghostel--apply-cursor-style :after
+              #'tyler/ghostel-command-mode-cursor))
 
 ;; Let emacsclient (e.g. $EDITOR in ghostel) reach this Emacs.  GUI only, so a
 ;; terminal Emacs (say, one opened as $EDITOR) doesn't take the server.
