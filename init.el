@@ -745,6 +745,80 @@ possible, this function prefers a vertical one."
   (interactive)
   (scroll-up (/ (window-body-height) 2)))
 
+(defun tyler/terminal-key-or (command)
+  "Return a command that runs COMMAND, except in a ghostel terminal taking input.
+There the key goes to the terminal, as ghostel binds it, so <up> and <down>
+browse shell history.  The keys are bound with `bind-key*', which would
+otherwise win over ghostel's bindings."
+  (lambda ()
+    (interactive)
+    (if (and (derived-mode-p 'ghostel-mode)
+             (memq (bound-and-true-p ghostel--input-mode) '(semi-char char)))
+        (call-interactively #'ghostel--send-event)
+      (call-interactively command))))
+
+;; A tab per project (tabspaces), and terminals in ghostel.
+(use-package ghostel
+  :ensure t
+  :custom
+  ;; Fetch the prebuilt native module on first use instead of asking.
+  (ghostel-module-auto-install 'download))
+
+(use-package ghostel-project
+  :after ghostel
+  :bind (:map project-prefix-map
+              ("m" . ghostel-project)
+              ("M" . ghostel-project-list-buffers))
+  :config
+  (add-to-list 'project-switch-commands '(ghostel-project "Ghostel") t)
+  (add-to-list 'project-kill-buffer-conditions '(derived-mode . ghostel-mode)))
+
+(use-package tabspaces
+  :ensure t
+  :custom
+  ;; C-c TAB o: open a project in its own tab; C-c TAB s: switch tabs.
+  (tabspaces-use-filtered-buffers-as-default t)
+  ;; Off until `tyler/load-session' restores the session, so nothing saves before.
+  (tabspaces-session nil)
+  ;; One session file in ~/.emacs.d, not a session file in every project root.
+  (tabspaces-session-project-session-store nil)
+  :config
+  ;; In my-command-mode, TAB is the tabspaces prefix: TAB o is C-c TAB o.
+  ;; <tab> too, so modes that bind <tab> (org, magit) don't shadow it.
+  (with-eval-after-load 'my-command-mode
+    (define-key my-command-mode-map (kbd "TAB") 'tabspaces-command-map)
+    (define-key my-command-mode-map (kbd "<tab>") 'tabspaces-command-map))
+  ;; TAB L (and C-c TAB L): load the saved session.
+  (define-key tabspaces-command-map (kbd "L") #'tyler/load-session))
+
+;; Saves each terminal and its scrollback with the tabspaces session; see the
+;; file's commentary.  Its mode is enabled by `tyler/load-session'.
+(use-package ghostel-resurrect
+  :load-path ("site-lisp")
+  :config
+  ;; tabspaces needs `tab-bar-mode' on, but the tab bar itself stays hidden.
+  (setq tab-bar-show nil)
+  (tab-bar-mode 1)
+  (tabspaces-mode 1))
+
+(defun tyler/load-session ()
+  "Restore the saved tabspaces session, terminals included, and keep saving it.
+Emacs starts without the session, and doesn't save it until this has run, so
+an Emacs that never loaded it (say, one opened as $EDITOR) can't overwrite it."
+  (interactive)
+  (when tabspaces-session
+    (user-error "Session already loaded"))
+  ;; Before restoring, so the terminals in the session are restored too.
+  (ghostel-resurrect-mode 1)
+  (tabspaces-restore-session)
+  (setq tabspaces-session t)
+  (add-hook 'kill-emacs-hook #'tabspaces--save-session-smart))
+
+;; Built into Emacs 30+: after a prefix key (e.g. C-x), shows the keys that can follow.
+(use-package which-key
+  :config
+  (which-key-mode 1))
+
 (use-package emacs
   :init
   ;; prefer spaces-only indentation
@@ -753,8 +827,14 @@ possible, this function prefers a vertical one."
   (bind-key* "C-c p" (tyler/invert-command 'tyler/transpose-lines))
   (bind-key* "C-c n" 'tyler/transpose-lines)
   (bind-key* "C-c j" 'duplicate-dwim)
-  (bind-key* "<up>" 'scroll-down-line)
-  (bind-key* "<down>" 'scroll-up-line)
+  ;; cmd +/-/0 zoom everything (mode line, minibuffer, tab bar, all buffers), not
+  ;; just the current buffer as Emacs.app's default `text-scale-adjust' does.
+  (bind-key "s-+" #'global-text-scale-adjust)
+  (bind-key "s-=" #'global-text-scale-adjust)
+  (bind-key "s--" #'global-text-scale-adjust)
+  (bind-key "s-0" #'global-text-scale-adjust)
+  (bind-key* "<up>" (tyler/terminal-key-or 'scroll-down-line))
+  (bind-key* "<down>" (tyler/terminal-key-or 'scroll-up-line))
   (bind-key* "C-c C-SPC" 'set-rectangular-region-anchor)
   (bind-key* "C-c C-s" 'isearch-forward-thing-at-point)
   (bind-key* "C-c s" 'window-swap-states)
@@ -805,6 +885,8 @@ possible, this function prefers a vertical one."
   ;; (global-completion-preview-mode)
 
   :custom-face
+  ;; Ghostty's "Material Darker" theme colors, so GUI Emacs looks like the terminal.
+  (default ((t (:background "#212121" :foreground "#eeffff"))))
   (completions-annotations ((t (:foreground "powderblue" :underline nil))))
   (error ((t (:foreground "tomato" :weight bold))))
   (mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "burlywood1" :background "#56514c"))))

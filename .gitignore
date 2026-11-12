@@ -20,3 +20,5 @@ tree-sitter
 history
 org-persist
 elpa/
+tabsession.el
+ghostel-sessions/

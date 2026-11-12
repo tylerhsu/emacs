@@ -74,6 +74,7 @@ Toggle the mode if ARG is nil. Enable the mode If ARG is zero or a positive numb
       (progn
         (hl-line-mode +1)
         (overwrite-mode -1))
-    (hl-line-mode -1)))
+    (progn
+      (hl-line-mode -1))))
 
 (provide 'my-command-mode)
