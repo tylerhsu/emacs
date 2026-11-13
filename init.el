@@ -9,6 +9,14 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
+;; GUI Emacs and the daemon are launched by launchd, not a shell, so they get a minimal
+;; PATH. Import PATH (and exec-path) from the login shell.
+(use-package exec-path-from-shell
+  :ensure t
+  :if (or (memq window-system '(mac ns x)) (daemonp))
+  :config
+  (exec-path-from-shell-initialize))
+
 ;; Emacs 30's built-in eglot (1.17) never asks servers for diagnostics, and TypeScript 7's
 ;; server only gives them when asked, so TS files would show no errors at all. `:ensure t'
 ;; counts the built-in as installed, so upgrade it from GNU ELPA explicitly.
