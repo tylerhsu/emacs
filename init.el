@@ -961,6 +961,16 @@ an Emacs that never loaded it (say, one opened as $EDITOR) can't overwrite it."
   (setq tabspaces-session t)
   (add-hook 'kill-emacs-hook #'tabspaces--save-session-smart))
 
+;; On startup, remind me how to load the session.  On an idle timer so the
+;; startup echo-area message doesn't replace it.
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (run-with-idle-timer
+             0 nil
+             (lambda ()
+               (unless tabspaces-session
+                 (message "Load workspaces: x TAB L (or C-c TAB L, M-x tyler/load-session)"))))))
+
 ;; Built into Emacs 30+: after a prefix key (e.g. C-x), shows the keys that can follow.
 (use-package which-key
   :config
