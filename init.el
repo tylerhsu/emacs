@@ -837,7 +837,19 @@ drawn something; TRIES counts the attempts."
     (add-hook 'after-change-major-mode-hook
               (lambda () (my-command-mode -1))
               t t))
-  (add-hook 'ghostel-mode-hook #'tyler/ghostel-start-without-command-mode))
+  (add-hook 'ghostel-mode-hook #'tyler/ghostel-start-without-command-mode)
+
+  ;; Sexp motion (forward-sexp, backward-sexp, and the kill/copy commands built
+  ;; on them) moves by prompt.
+  (defun tyler/ghostel-forward-sexp (&optional n)
+    "Move forward N prompts, or backward if N is negative."
+    (setq n (or n 1))
+    (if (< n 0)
+        (ghostel-previous-prompt (- n))
+      (ghostel-next-prompt n)))
+  (defun tyler/ghostel-setup-sexp ()
+    (setq-local forward-sexp-function #'tyler/ghostel-forward-sexp))
+  (add-hook 'ghostel-mode-hook #'tyler/ghostel-setup-sexp))
 
 ;; Let emacsclient (e.g. $EDITOR in ghostel) reach this Emacs.  GUI only, so a
 ;; terminal Emacs (say, one opened as $EDITOR) doesn't take the server.
