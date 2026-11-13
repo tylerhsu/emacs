@@ -839,6 +839,27 @@ drawn something; TRIES counts the attempts."
               t t))
   (add-hook 'ghostel-mode-hook #'tyler/ghostel-start-without-command-mode)
 
+  ;; Switching to a terminal (another buffer in the window, or another window)
+  ;; leaves it ready for typing.  Only in that buffer: other buffers keep
+  ;; their state.  The minibuffer doesn't count as a switch, so M-x from a
+  ;; terminal in command mode comes back to command mode.
+  (defvar tyler/ghostel--last-buffer nil
+    "The buffer of the selected window when it last changed.")
+  (defun tyler/ghostel-command-mode-off-on-switch (&optional _frame)
+    "Turn `my-command-mode' off on switching to a ghostel buffer."
+    (let ((buffer (window-buffer (selected-window))))
+      (unless (or (minibufferp buffer)
+                  (eq buffer tyler/ghostel--last-buffer))
+        (setq tyler/ghostel--last-buffer buffer)
+        (with-current-buffer buffer
+          (when (and (derived-mode-p 'ghostel-mode)
+                     (bound-and-true-p my-command-mode))
+            (my-command-mode -1))))))
+  (add-hook 'window-selection-change-functions
+            #'tyler/ghostel-command-mode-off-on-switch)
+  (add-hook 'window-buffer-change-functions
+            #'tyler/ghostel-command-mode-off-on-switch)
+
   ;; Sexp motion (forward-sexp, backward-sexp, and the kill/copy commands built
   ;; on them) moves by prompt.
   (defun tyler/ghostel-forward-sexp (&optional n)
