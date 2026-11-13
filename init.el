@@ -472,11 +472,7 @@ instead of buffer lines."
 (use-package my-command-mode
   :load-path ("site-lisp")
   :config
-  (defun tyler/my-command-mode-on ()
-    "Turn on `my-command-mode' in all buffers."
-    (interactive)
-    (my-command-mode-all 1))
-  (bind-key* "C-j" #'tyler/my-command-mode-on)
+  (bind-key* "C-j" (lambda () (interactive) (my-command-mode-all 1)))
   ;; move
   (define-key my-command-mode-map (kbd "n") #'next-line)
   (define-key my-command-mode-map (kbd "p") #'previous-line)
@@ -785,43 +781,7 @@ otherwise win over ghostel's bindings."
     (when (and cursor-type (fboundp 'my-command-mode-current-cursor-type))
       (setq cursor-type (my-command-mode-current-cursor-type))))
   (advice-add 'ghostel--apply-cursor-style :after
-              #'tyler/ghostel-command-mode-cursor)
-
-  ;; Line mode while my-command-mode is on (the buffer is editable text, so
-  ;; command keys move around and edit the input), char mode while it is off
-  ;; (every key goes to the terminal).  Copy and Emacs modes are left alone.
-  (defun tyler/ghostel-sync-input-mode (&optional buffer tries)
-    "Match BUFFER's ghostel input mode to `my-command-mode'.
-A new buffer turns on `my-command-mode' before its shell has drawn a
-prompt, so entering line mode is retried; TRIES counts the attempts."
-    (setq buffer (or buffer (current-buffer)))
-    (when (buffer-live-p buffer)
-      (with-current-buffer buffer
-        (when (derived-mode-p 'ghostel-mode)
-          (let ((inhibit-message t))
-            (if (bound-and-true-p my-command-mode)
-                (progn
-                  ;; Char mode's keymap outranks minor modes, so leave it
-                  ;; even when line mode can't start yet (a TUI is up, and
-                  ;; line mode waits for it to exit): semi-char lets the
-                  ;; command keys through meanwhile.
-                  (when (eq ghostel--input-mode 'char)
-                    (ghostel-semi-char-mode))
-                  (when (and (eq ghostel--input-mode 'semi-char)
-                             (not (and ghostel--term
-                                       (ignore-errors (ghostel-line-mode) t)))
-                             (< (or tries 0) 40))
-                    (run-with-timer 0.25 nil #'tyler/ghostel-sync-input-mode
-                                    buffer (1+ (or tries 0)))))
-              ;; Also clears line mode armed to start when a TUI exits.
-              (when (memq ghostel--input-mode '(line semi-char))
-                (ghostel-char-mode))))
-          ;; Switching input modes resets `cursor-type'.
-          (tyler/ghostel-command-mode-cursor)))))
-  (add-hook 'my-command-mode-hook #'tyler/ghostel-sync-input-mode)
-  ;; Char mode's keymap is consulted ahead of `bind-key*' bindings, so C-j
-  ;; would otherwise go to the terminal and command mode couldn't come back.
-  (keymap-set ghostel-char-mode-map "C-j" #'tyler/my-command-mode-on))
+              #'tyler/ghostel-command-mode-cursor))
 
 ;; Let emacsclient (e.g. $EDITOR in ghostel) reach this Emacs.  GUI only, so a
 ;; terminal Emacs (say, one opened as $EDITOR) doesn't take the server.
