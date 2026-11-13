@@ -31,6 +31,7 @@
         comment-dwim
         consult-buffer
         electric-newline-and-maybe-indent
+        eval-buffer
         find-file
         flymake-goto-next-error
         helm-mini

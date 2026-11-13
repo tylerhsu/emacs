@@ -179,9 +179,12 @@ installed elsewhere, e.g. in a container?). Download %s into its node_modules? "
 
 (use-package flymake
   :init
-  (bind-key* "C-c f l" 'flymake-show-project-diagnostics)
-  (bind-key* "C-c f n" 'flymake-goto-next-error)
-  (bind-key* "C-c f p" 'flymake-goto-prev-error))
+  (defvar-keymap tyler/flymake-prefix-map
+    :doc "Keymap for flymake commands, on C-c f and in my-command-mode."
+    "l" #'flymake-show-project-diagnostics
+    "n" #'flymake-goto-next-error
+    "p" #'flymake-goto-prev-error)
+  (bind-key* "C-c f" tyler/flymake-prefix-map))
 
 (use-package project
   :config
@@ -502,9 +505,6 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "[") #'point-to-register)
   (define-key my-command-mode-map (kbd "]") #'jump-to-register)
   (define-key my-command-mode-map (kbd "co") (lambda () (interactive) (call-interactively 'isearch-occur) (call-interactively 'other-window)))
-  (define-key my-command-mode-map (kbd "gfn") #'flymake-goto-next-error)
-  (define-key my-command-mode-map (kbd "gfp") #'flymake-goto-prev-error)
-  (define-key my-command-mode-map (kbd "gfl") #'flymake-show-project-diagnostics)
   ;; misc
   (define-key my-command-mode-map (kbd "gs") #'query-replace-regexp)
   (define-key my-command-mode-map (kbd ";") #'comment-line)
@@ -512,6 +512,10 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "/") #'fixup-whitespace)
   (define-key my-command-mode-map (kbd "g9") #'kmacro-start-macro)
   (define-key my-command-mode-map (kbd "g0") #'kmacro-end-or-call-macro)
+  ;; mark
+  (define-key my-command-mode-map (kbd "SPC") #'set-mark-command)
+  (define-key my-command-mode-map (kbd "g SPC") #'set-rectangular-region-anchor)
+  (define-key my-command-mode-map (kbd "'") #'mc/mark-more-like-this-extended)
   ;; insert
   (define-key my-command-mode-map (kbd "i") (lambda () (interactive) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "P") (lambda () (interactive) (beginning-of-line) (open-line 1) (indent-for-tab-command) (my-command-mode-all -1)))
@@ -520,20 +524,6 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "A") (lambda () (interactive) (beginning-of-line) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "M") (lambda () (interactive) (back-to-indentation) (my-command-mode-all -1)))
   (define-key my-command-mode-map (kbd "O") (lambda () (interactive) (overwrite-mode) (my-command-mode-all -1)))
-  ;; mark
-  (define-key my-command-mode-map (kbd "SPC SPC") #'set-mark-command)
-  (define-key my-command-mode-map (kbd "SPC r") #'set-rectangular-region-anchor)
-  (define-key my-command-mode-map (kbd "SPC f") #'mark-word)
-  (define-key my-command-mode-map (kbd "SPC b") (tyler/invert-command 'mark-word))
-  (define-key my-command-mode-map (kbd "SPC w") (lambda () (interactive) (backward-word) (call-interactively 'mark-word)))
-  (define-key my-command-mode-map (kbd "SPC j") #'mark-sexp)
-  (define-key my-command-mode-map (kbd "SPC h") (tyler/invert-command 'mark-sexp))
-  (define-key my-command-mode-map (kbd "SPC s") (lambda () (interactive) (backward-sexp) (call-interactively 'mark-sexp)))
-  (define-key my-command-mode-map (kbd "SPC e") (lambda () (interactive) (push-mark (line-end-position) nil t)))
-  (define-key my-command-mode-map (kbd "SPC m") (lambda () (interactive) (save-excursion (back-to-indentation) (push-mark nil nil t))))
-  (define-key my-command-mode-map (kbd "SPC a") (lambda () (interactive) (push-mark (line-beginning-position) nil t)))
-  (define-key my-command-mode-map (kbd "SPC l") #'tyler/mark-whole-line)
-  (define-key my-command-mode-map (kbd "SPC d") #'mark-defun)
   ;; kill/yank
   (define-key my-command-mode-map (kbd "kd") #'delete-char)
   (define-key my-command-mode-map (kbd "kf") #'kill-word)
@@ -547,7 +537,7 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "ka") (lambda () (interactive) (kill-line 0)))
   (define-key my-command-mode-map (kbd "kl") #'tyler/kill-whole-line)
   (define-key my-command-mode-map (kbd "kp") (tyler/repeat-command 'delete-indentation))
-  (define-key my-command-mode-map (kbd "kr") #'kill-region)
+  (define-key my-command-mode-map (kbd "kk") #'kill-region)
   (define-key my-command-mode-map (kbd "y") #'yank)
   (define-key my-command-mode-map (kbd "gy") #'consult-yank-replace)
   ;; copy
@@ -561,7 +551,7 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "cm") (tyler/kill-ring-save 'back-to-indentation nil))
   (define-key my-command-mode-map (kbd "ca") (tyler/kill-ring-save 'beginning-of-line nil))
   (define-key my-command-mode-map (kbd "cl") #'tyler/copy-whole-line)
-  (define-key my-command-mode-map (kbd "cr") #'kill-ring-save)
+  (define-key my-command-mode-map (kbd "cc") #'kill-ring-save)
   (define-key my-command-mode-map (kbd "cn") #'duplicate-dwim)
   ;; transpose
   (define-key my-command-mode-map (kbd "tf") #'transpose-words)
@@ -581,9 +571,12 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "x3") #'split-window-right)
   (define-key my-command-mode-map (kbd "x0") #'delete-window)
   (define-key my-command-mode-map (kbd "xo") #'other-window)
-  (define-key my-command-mode-map (kbd "xpf") #'project-find-file)
-  (define-key my-command-mode-map (kbd "xpg") #'project-find-regexp)
-  (define-key my-command-mode-map (kbd "xpp") #'project-switch-project))
+  ;;; open ghostel buffer
+  (define-key my-command-mode-map (kbd "`") #'ghostel-project)
+  ;; prefixes into other keymaps
+  (define-key my-command-mode-map (kbd "x TAB") 'tabspaces-command-map)
+  (define-key my-command-mode-map (kbd "xn") tyler/flymake-prefix-map)
+  (define-key my-command-mode-map (kbd "xp") project-prefix-map))
 
 ;; Custom functions
 (defun tyler/open-line-between-delimiters ()
@@ -811,11 +804,6 @@ otherwise win over ghostel's bindings."
   ;; One session file in ~/.emacs.d, not a session file in every project root.
   (tabspaces-session-project-session-store nil)
   :config
-  ;; In my-command-mode, TAB is the tabspaces prefix: TAB o is C-c TAB o.
-  ;; <tab> too, so modes that bind <tab> (org, magit) don't shadow it.
-  (with-eval-after-load 'my-command-mode
-    (define-key my-command-mode-map (kbd "TAB") 'tabspaces-command-map)
-    (define-key my-command-mode-map (kbd "<tab>") 'tabspaces-command-map))
   ;; TAB L (and C-c TAB L): load the saved session.
   (define-key tabspaces-command-map (kbd "L") #'tyler/load-session)
   ;; consult-buffer lists this tab's buffers by default; `b SPC' shows all.
