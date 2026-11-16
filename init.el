@@ -561,6 +561,7 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "cl") #'tyler/copy-whole-line)
   (define-key my-command-mode-map (kbd "cc") #'kill-ring-save)
   (define-key my-command-mode-map (kbd "cn") #'duplicate-dwim)
+  (define-key my-command-mode-map (kbd "cq") #'tyler/copy-lines-at-offset)
   ;; transpose
   (define-key my-command-mode-map (kbd "tf") #'transpose-words)
   (define-key my-command-mode-map (kbd "tb") (tyler/invert-command 'transpose-words))
@@ -580,7 +581,7 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "x0") #'delete-window)
   (define-key my-command-mode-map (kbd "xo") #'other-window)
   ;;; open ghostel buffer
-  (define-key my-command-mode-map (kbd "`") #'ghostel-project)
+  (define-key my-command-mode-map (kbd "`") #'tyler/ghostel-tabspace)
   ;; prefixes into other keymaps
   (define-key my-command-mode-map (kbd "x TAB") 'tabspaces-command-map)
   (define-key my-command-mode-map (kbd "xn") tyler/flymake-prefix-map)
@@ -654,6 +655,32 @@ appropriate indentation."
                                    (+ 1 numeric-prefix)))))
          (kill-ring-save beginning end))
   (message "Copied"))
+
+(defun tyler/copy-lines-at-offset (start &optional end)
+  "Copy the lines START through END lines from point, as shown by
+relative line numbers (negative is above point).
+With a prefix N, copy the single line N lines from point.  Otherwise
+prompt for START and END; an empty END defaults to START."
+  (interactive
+   (if current-prefix-arg
+       (list (prefix-numeric-value current-prefix-arg))
+     (let* ((start (read-number "Start line: "))
+            (end (read-string (format "End line (default %d): " start))))
+       (list start (if (string-blank-p end) start (string-to-number end))))))
+  (let* ((end (or end start))
+         (line (line-number-at-pos))
+         (last (line-number-at-pos (point-max)))
+         (from (+ line (min start end)))
+         (to (+ line (max start end))))
+    (unless (and (>= from 1) (<= to last))
+      (user-error "Line offset out of range"))
+    (save-excursion
+      (goto-char (point-min))
+      (forward-line (1- from))
+      (let ((beg (point)))
+        (forward-line (- to from))
+        (kill-ring-save beg (line-end-position))))
+    (message "Copied %d line%s" (1+ (- to from)) (if (= from to) "" "s"))))
 
 ;; (defun tyler/swap-windows (&optional other-win)
 ;;   "Swap the buffers displayed in the current window and OTHER-WIN.
@@ -869,11 +896,30 @@ drawn something; TRIES counts the attempts."
 (use-package ghostel-project
   :after ghostel
   :bind (:map project-prefix-map
-              ("m" . ghostel-project)
+              ("m" . tyler/ghostel-tabspace)
               ("M" . ghostel-project-list-buffers))
   :config
   (add-to-list 'project-switch-commands '(ghostel-project "Ghostel") t)
   (add-to-list 'project-kill-buffer-conditions '(derived-mode . ghostel-mode)))
+
+;; New terminals open at the current tab's root, not the current buffer's
+;; project (whose git root may be elsewhere, or above the tab's root).
+(defun tyler/ghostel-tabspace (&optional arg)
+  "Like `ghostel-project', but rooted at the current tabspace's root.
+Falls back to `ghostel-project' in tabs without a root.  ARG is passed
+through to `ghostel-project'."
+  (interactive "P")
+  (if-let* ((root (and (fboundp 'tabspaces--get-project-for-tab)
+                       (tabspaces--get-project-for-tab
+                        (tabspaces--current-tab-name))))
+            ((file-directory-p root)))
+      (let* ((root (file-name-as-directory (expand-file-name root)))
+             (default-directory root)
+             ;; Make `project-current' return exactly the tab root, so the
+             ;; buffer name and reuse of existing terminals follow it too.
+             (project-find-functions (list (lambda (_) (cons 'transient root)))))
+        (ghostel-project arg))
+    (ghostel-project arg)))
 
 (use-package tabspaces
   :ensure t
@@ -1067,4 +1113,5 @@ an Emacs that never loaded it (say, one opened as $EDITOR) can't overwrite it."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(flymake-error ((t (:underline (:color "coral1" :style wave :position nil)))))
  '(hl-line ((t (:background "gray24")))))
