@@ -1031,6 +1031,23 @@ an Emacs that never loaded it (say, one opened as $EDITOR) can't overwrite it."
   :custom-face
   ;; Ghostty's "Material Darker" theme colors, so GUI Emacs looks like the terminal.
   (default ((t (:background "#212121" :foreground "#eeffff"))))
+  ;; Its 16 ANSI colors, used by ghostel, compilation, eshell, etc.
+  (ansi-color-black ((t (:foreground "#000000" :background "#000000"))))
+  (ansi-color-red ((t (:foreground "#ff5370" :background "#ff5370"))))
+  (ansi-color-green ((t (:foreground "#c3e88d" :background "#c3e88d"))))
+  (ansi-color-yellow ((t (:foreground "#ffcb6b" :background "#ffcb6b"))))
+  (ansi-color-blue ((t (:foreground "#82aaff" :background "#82aaff"))))
+  (ansi-color-magenta ((t (:foreground "#c792ea" :background "#c792ea"))))
+  (ansi-color-cyan ((t (:foreground "#89ddff" :background "#89ddff"))))
+  (ansi-color-white ((t (:foreground "#ffffff" :background "#ffffff"))))
+  (ansi-color-bright-black ((t (:foreground "#545454" :background "#545454"))))
+  (ansi-color-bright-red ((t (:foreground "#ff5370" :background "#ff5370"))))
+  (ansi-color-bright-green ((t (:foreground "#c3e88d" :background "#c3e88d"))))
+  (ansi-color-bright-yellow ((t (:foreground "#ffcb6b" :background "#ffcb6b"))))
+  (ansi-color-bright-blue ((t (:foreground "#82aaff" :background "#82aaff"))))
+  (ansi-color-bright-magenta ((t (:foreground "#c792ea" :background "#c792ea"))))
+  (ansi-color-bright-cyan ((t (:foreground "#89ddff" :background "#89ddff"))))
+  (ansi-color-bright-white ((t (:foreground "#ffffff" :background "#ffffff"))))
   (completions-annotations ((t (:foreground "powderblue" :underline nil))))
   (error ((t (:foreground "tomato" :weight bold))))
   (mode-line ((t (:box (:line-width (1 . -1) :style released-button) :foreground "burlywood1" :background "#56514c"))))
