@@ -677,6 +677,7 @@ prompt for START and END; an empty END defaults to START."
     (save-excursion
       (goto-char (point-min))
       (forward-line (1- from))
+      (back-to-indentation)
       (let ((beg (point)))
         (forward-line (- to from))
         (kill-ring-save beg (line-end-position))))
