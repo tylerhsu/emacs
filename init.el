@@ -812,57 +812,55 @@ otherwise win over ghostel's bindings."
   (advice-add 'ghostel--apply-cursor-style :after
               #'tyler/ghostel-command-mode-cursor)
 
-  ;; Copy mode while my-command-mode is on: the terminal is frozen and
-  ;; read-only, so command keys move around and copy its text.  Turning
-  ;; my-command-mode off returns to the input mode from before, and leaving
-  ;; copy mode (however ghostel does it) turns my-command-mode off.
-  (defvar tyler/ghostel--leaving-copy nil
-    "The buffer whose copy mode is being left, while that is underway.")
+  ;; Emacs mode while my-command-mode is on: the buffer is read-only, so
+  ;; command keys move around and copy its text, but the terminal keeps
+  ;; running and output keeps coming in.  Turning my-command-mode off returns
+  ;; to the input mode from before, and leaving Emacs (or copy) mode, however
+  ;; ghostel does it, turns my-command-mode off.
+  (defvar tyler/ghostel--leaving-readonly nil
+    "The buffer whose read-only mode is being left, while that is underway.")
 
-  (defun tyler/ghostel-sync-copy-mode (&optional buffer tries)
-    "Put BUFFER in ghostel copy mode exactly while `my-command-mode' is on.
-A new buffer turns on `my-command-mode' before its terminal exists, and
-copy mode would freeze it blank, so entry waits until the terminal has
-drawn something; TRIES counts the attempts."
+  (defun tyler/ghostel-sync-readonly-mode (&optional buffer tries)
+    "Put BUFFER in ghostel Emacs mode exactly while `my-command-mode' is on.
+A new buffer turns on `my-command-mode' before its terminal exists, so
+entry waits until the terminal is there; TRIES counts the attempts."
     (setq buffer (or buffer (current-buffer)))
     (when (buffer-live-p buffer)
       (with-current-buffer buffer
         (when (and (derived-mode-p 'ghostel-mode)
-                   (not (eq tyler/ghostel--leaving-copy buffer)))
+                   (not (eq tyler/ghostel--leaving-readonly buffer)))
           (let ((inhibit-message t))
             (cond
              ((not (bound-and-true-p my-command-mode))
-              (when (eq ghostel--input-mode 'copy)
+              (when (memq ghostel--input-mode '(copy emacs))
                 (ghostel-readonly-exit)))
              ((memq ghostel--input-mode '(copy emacs)))
-             ((and ghostel--term
-                   (save-excursion
-                     (goto-char (point-min))
-                     (re-search-forward "[^ \t\n]" nil t)))
+             (ghostel--term
               ;; Follows `ghostel-readonly-fast-exit': when it's on, q, C-g,
               ;; yanking, M-w and printable keys my-command-mode doesn't
               ;; bind all exit (and so leave my-command-mode too).
-              (ghostel-copy-mode))
+              (ghostel-emacs-mode))
              ((< (or tries 0) 40)
-              (run-with-timer 0.25 nil #'tyler/ghostel-sync-copy-mode
+              (run-with-timer 0.25 nil #'tyler/ghostel-sync-readonly-mode
                               buffer (1+ (or tries 0))))))
           ;; Switching input modes resets `cursor-type'.
           (tyler/ghostel-command-mode-cursor)))))
-  (add-hook 'my-command-mode-hook #'tyler/ghostel-sync-copy-mode)
+  (add-hook 'my-command-mode-hook #'tyler/ghostel-sync-readonly-mode)
 
-  ;; Every way out of copy (or Emacs) mode runs `ghostel--leave-readonly-state',
-  ;; while `ghostel--input-mode' still names the mode being left.
-  (defun tyler/ghostel-leave-command-mode-with-copy (orig &rest args)
-    "Run ORIG with ARGS; when that leaves copy mode, leave `my-command-mode'."
-    (let ((leaving-copy (eq ghostel--input-mode 'copy)))
+  ;; Every way out of copy or Emacs mode runs `ghostel--leave-readonly-state',
+  ;; while `ghostel--input-mode' still names the mode being left.  Switching
+  ;; between the two doesn't run it.
+  (defun tyler/ghostel-leave-command-mode-with-readonly (orig &rest args)
+    "Run ORIG with ARGS; when that leaves read-only mode, leave `my-command-mode'."
+    (let ((leaving (memq ghostel--input-mode '(copy emacs))))
       (apply orig args)
-      (when (and leaving-copy (bound-and-true-p my-command-mode))
-        ;; This buffer is already on its way out of copy mode, so the
+      (when (and leaving (bound-and-true-p my-command-mode))
+        ;; This buffer is already on its way out of read-only mode, so the
         ;; my-command-mode hook must not try to exit it again.
-        (let ((tyler/ghostel--leaving-copy (current-buffer)))
+        (let ((tyler/ghostel--leaving-readonly (current-buffer)))
           (my-command-mode-all -1)))))
   (advice-add 'ghostel--leave-readonly-state :around
-              #'tyler/ghostel-leave-command-mode-with-copy)
+              #'tyler/ghostel-leave-command-mode-with-readonly)
 
   ;; New terminals open ready for typing.  my-command-mode turns itself on
   ;; from `after-change-major-mode-hook', which runs after `ghostel-mode-hook',

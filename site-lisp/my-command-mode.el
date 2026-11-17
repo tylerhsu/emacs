@@ -69,14 +69,14 @@ Toggle the mode if ARG is nil. Enable the mode If ARG is zero or a positive numb
 (defvar my-command-mode-cursor-type '(box . 4)
   "`cursor-type' while `my-command-mode' is on.")
 
-(defvar my-command-mode-insert-cursor-type '(box . 4)
+(defvar my-command-mode-insert-cursor-type 'bar
   "`cursor-type' while `my-command-mode' is off, i.e. typing text.")
 
 (defun my-command-mode-current-cursor-type ()
   "The `cursor-type' for the current state of `my-command-mode'."
   (if my-command-mode my-command-mode-cursor-type my-command-mode-insert-cursor-type))
 
-(defvar my-command-mode-insert-cursor-color "spring green"
+(defvar my-command-mode-insert-cursor-color "white"
   "Cursor color while `my-command-mode' is off.
 While it is on, the cursor has its default color (the `cursor' face's spec).")
 
