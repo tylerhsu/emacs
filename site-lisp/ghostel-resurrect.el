@@ -20,9 +20,19 @@
 ;; `ghostel-resurrect-save-interval' seconds, once Emacs is idle.
 ;;
 ;; Each terminal also gets GHOSTEL_RESURRECT_ID in its environment,
-;; stable across restores.  To give each terminal its own shell command
-;; history, as tmux panes have, name the shell's HISTFILE after it (see
-;; `getHistFile' in ~/.zshrc).
+;; stable across restores and buffer renames.
+;;
+;; zsh terminals also get their own command history, as tmux panes have
+;; (see `ghostel-resurrect-history').  It belongs to the terminal's slot,
+;; its project root and instance number (the N in NAME<N>, and in
+;; C-u N `ghostel-project'), not to the buffer: renaming doesn't change
+;; the slot, restores keep it, and killing the buffer keeps the history,
+;; so a new terminal opened in the same slot picks it up again.  It's
+;; set up without any ~/.zshrc code:
+;; ghostel starts zsh with ZDOTDIR pointing at its shell-integration
+;; bootstrap, and this points it at ghostel-resurrect/zsh/ instead,
+;; whose .zshenv hands ZDOTDIR back and, at the first prompt (after
+;; ~/.zshrc has set its own HISTFILE), switches to the terminal's file.
 ;;
 ;; Limits: colors are not kept (ghostel's module can only export plain
 ;; text), and command buffers (`ghostel-exec', `ghostel-compile') and
@@ -58,6 +68,26 @@ were printed in a terminal."
 A `format-time-string' format; it may contain terminal escape codes."
   :type '(choice string (const :tag "None" nil)))
 
+(defcustom ghostel-resurrect-history t
+  "Non-nil gives each zsh terminal slot its own command history file.
+A slot is a `ghostel-identity', such as project ~/ebcs/, instance 2,
+so the history survives renames, restores and killing the buffer:
+C-u 2 `ghostel-project' in that project brings it back.  The files are
+in `ghostel-resurrect-history-directory'.  Needs ghostel's zsh shell
+integration, which is on by default."
+  :type 'boolean)
+
+(defcustom ghostel-resurrect-history-directory
+  (expand-file-name "history/" ghostel-resurrect-directory)
+  "Directory holding each terminal slot's zsh history.
+Never cleaned up, unlike saved scrollback."
+  :type 'directory)
+
+(defconst ghostel-resurrect--zdotdir
+  (expand-file-name "ghostel-resurrect/zsh/"
+                    (file-name-directory (or load-file-name buffer-file-name)))
+  "Directory whose .zshenv sets up a terminal's own history file.")
+
 (defvar-local ghostel-resurrect--id nil
   "This terminal's id, naming its scrollback file.  Kept across restores.")
 (put 'ghostel-resurrect--id 'permanent-local t)
@@ -75,6 +105,22 @@ Scrollback files of other ids are deleted after a save.")
 (defun ghostel-resurrect--file (id)
   "Return the scrollback file for terminal ID."
   (expand-file-name (concat id ".txt") ghostel-resurrect-directory))
+
+(defun ghostel-resurrect--history-file (identity)
+  "Return the zsh history file for the terminal slot IDENTITY.
+Named for people (the project or buffer name, then the instance) and
+made unique by a hash of the whole identity."
+  (let* ((root (alist-get 'project-root identity))
+         (label (or (and root (file-name-nondirectory (directory-file-name root)))
+                    (alist-get 'name identity)
+                    "ghostel"))
+         (label (replace-regexp-in-string "[^[:alnum:]._-]+" "_"
+                                          (string-trim label "[*]+" "[*]+"))))
+    (expand-file-name
+     (format "%s-%s-%s.zsh_history" label
+             (or (alist-get 'instance identity) 1)
+             (substring (secure-hash 'sha1 (prin1-to-string identity)) 0 8))
+     ghostel-resurrect-history-directory)))
 
 (defun ghostel-resurrect--ensure-id ()
   "Return the current terminal's id, making one if it has none."
@@ -149,8 +195,27 @@ before its shell starts."
                            "\r\n"))))))))
 
 (defun ghostel-resurrect--export-id ()
-  "Put this terminal's id in the environment of the shell about to start."
-  (setenv "GHOSTEL_RESURRECT_ID" (ghostel-resurrect--ensure-id)))
+  "Put this terminal's id in the environment of the shell about to start.
+For zsh, also arrange for it to use the terminal's own history file."
+  (let ((id (ghostel-resurrect--ensure-id))
+        (zdotdir (getenv "ZDOTDIR")))
+    (setenv "GHOSTEL_RESURRECT_ID" id)
+    ;; ghostel sets ZDOTDIR to its zsh bootstrap only for a local zsh
+    ;; with shell integration on, so this also tells that the shell is zsh.
+    (when (and ghostel-resurrect-history
+               ghostel-identity
+               zdotdir
+               (string-suffix-p "etc/shell/bootstrap/zsh"
+                                (directory-file-name zdotdir))
+               (not (file-remote-p default-directory))
+               (file-readable-p
+                (expand-file-name ".zshenv" ghostel-resurrect--zdotdir)))
+      (with-file-modes #o700
+        (make-directory ghostel-resurrect-history-directory t))
+      (setenv "GHOSTEL_RESURRECT_ZDOTDIR" zdotdir)
+      (setenv "GHOSTEL_RESURRECT_HISTFILE"
+              (ghostel-resurrect--history-file ghostel-identity))
+      (setenv "ZDOTDIR" (directory-file-name ghostel-resurrect--zdotdir)))))
 
 (defun ghostel-resurrect-restore-buffer (record)
   "Start a terminal from tabspaces session RECORD and return its buffer."
