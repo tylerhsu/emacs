@@ -199,7 +199,59 @@ installed elsewhere, e.g. in a container?). Download %s into its node_modules? "
   ;; Files that signal a project root. Eglot uses project to find the project root, then the language server starts looking for configs like tsconfig.json from that root.
   ;; Without this, eglot only sets up correctly when the project is a git repo.
   (add-to-list 'project-vc-extra-root-markers "package.json")
-  (add-to-list 'project-vc-extra-root-markers "tsconfig.json"))
+  (add-to-list 'project-vc-extra-root-markers "tsconfig.json")
+
+  ;; A directory containing a `.project-root' file is one project, git repos
+  ;; nested in it included (otherwise each nested repo is its own project).
+  ;; Its files are listed with `git ls-files' in each repo, so .gitignore
+  ;; still applies.  Eglot doesn't see it, so language servers still start
+  ;; per nested repo (or package.json/tsconfig.json root, as above), each
+  ;; with that repo's own TypeScript and configs.  To keep the marker out of
+  ;; the outer repo without touching its .gitignore, list it in
+  ;; .git/info/exclude.
+  (defun tyler/project-try-root-marker (dir)
+    "Return the nested-repos project containing DIR, if it has a `.project-root'."
+    (unless (bound-and-true-p eglot-lsp-context)
+      (when-let* ((root (locate-dominating-file dir ".project-root")))
+        (cons 'tyler-nested (file-name-as-directory (expand-file-name root))))))
+  (add-hook 'project-find-functions #'tyler/project-try-root-marker -90)
+
+  (cl-defmethod project-root ((project (head tyler-nested)))
+    (cdr project))
+
+  (defun tyler/project-git-files (repo)
+    "List REPO's files, tracked and untracked but not ignored, as absolute names.
+Git repos nested in REPO are listed the same way, even ones REPO ignores."
+    (let* ((default-directory repo)
+           (git (lambda (&rest args)
+                  (with-temp-buffer
+                    (when (eql 0 (apply #'process-file "git" nil t nil
+                                        "ls-files" "-z" args))
+                      (split-string (buffer-string) "\0" t)))))
+           ;; git lists a nested repo as one entry, its directory with a
+           ;; trailing slash.
+           (entries (funcall git "-c" "-o" "--exclude-standard"))
+           ;; Ignored directories, each as one entry, in case one is a repo.
+           (ignored (seq-filter
+                     (lambda (d) (file-exists-p (expand-file-name ".git" d)))
+                     (funcall git "-o" "-i" "--exclude-standard" "--directory")))
+           files)
+      (dolist (entry (append entries ignored))
+        (let ((file (expand-file-name entry repo)))
+          (if (directory-name-p entry)
+              (when (file-exists-p (expand-file-name ".git" file))
+                (setq files (nconc (tyler/project-git-files file) files)))
+            (push file files))))
+      (delete-dups files)))
+
+  (cl-defmethod project-files ((project (head tyler-nested)) &optional dirs)
+    (let ((files (tyler/project-git-files (project-root project))))
+      (if (null dirs)
+          files
+        (let ((dirs (mapcar (lambda (d) (file-name-as-directory (expand-file-name d)))
+                            dirs)))
+          (seq-filter (lambda (f) (seq-some (lambda (d) (string-prefix-p d f)) dirs))
+                      files))))))
 
 (use-package flymake-eslint
   :ensure t
@@ -480,6 +532,21 @@ instead of buffer lines."
       (kill-ring-save beginning end)
       (message "Copied"))))
 
+;; Ghostel terminal commands, on ` in my-command-mode.  A digit N switches to
+;; terminal number N, like C-u N `ghostel-project'.
+(defvar-keymap tyler/ghostel-prefix-map
+  :doc "Keymap for ghostel terminal commands, on ` in my-command-mode."
+  "`" #'ghostel-project
+  "c" #'ghostel-project-new
+  "n" #'ghostel-project-next
+  "p" #'ghostel-project-previous
+  "l" #'tyler/ghostel-project-buffers)
+(dotimes (n 10)
+  (keymap-set tyler/ghostel-prefix-map (number-to-string n)
+              (lambda ()
+                (interactive)
+                (ghostel-project n))))
+
 (use-package my-command-mode
   :load-path ("site-lisp")
   :config
@@ -580,8 +647,8 @@ instead of buffer lines."
   (define-key my-command-mode-map (kbd "x3") #'split-window-right)
   (define-key my-command-mode-map (kbd "x0") #'delete-window)
   (define-key my-command-mode-map (kbd "xo") #'other-window)
-  ;;; open ghostel buffer
-  (define-key my-command-mode-map (kbd "`") #'tyler/ghostel-tabspace)
+  ;;; ghostel terminals
+  (define-key my-command-mode-map (kbd "`") tyler/ghostel-prefix-map)
   ;; prefixes into other keymaps
   (define-key my-command-mode-map (kbd "x TAB") 'tabspaces-command-map)
   (define-key my-command-mode-map (kbd "xn") tyler/flymake-prefix-map)
@@ -883,7 +950,11 @@ entry waits until the terminal is there; TRIES counts the attempts."
       (ghostel-next-prompt n)))
   (defun tyler/ghostel-setup-sexp ()
     (setq-local forward-sexp-function #'tyler/ghostel-forward-sexp))
-  (add-hook 'ghostel-mode-hook #'tyler/ghostel-setup-sexp))
+  (add-hook 'ghostel-mode-hook #'tyler/ghostel-setup-sexp)
+
+  ;; `project-kill-buffers' kills a project's terminals too.
+  (with-eval-after-load 'project
+    (add-to-list 'project-kill-buffer-conditions '(derived-mode . ghostel-mode))))
 
 ;; Let emacsclient (e.g. $EDITOR in ghostel) reach this Emacs.  GUI only, so a
 ;; terminal Emacs (say, one opened as $EDITOR) doesn't take the server.
@@ -895,30 +966,30 @@ entry waits until the terminal is there; TRIES counts the attempts."
 (use-package ghostel-project
   :after ghostel
   :bind (:map project-prefix-map
-              ("m" . tyler/ghostel-tabspace)
-              ("M" . ghostel-project-list-buffers))
+              ("m" . ghostel-project)
+              ("M" . tyler/ghostel-project-buffers))
   :config
-  (add-to-list 'project-switch-commands '(ghostel-project "Ghostel") t)
-  (add-to-list 'project-kill-buffer-conditions '(derived-mode . ghostel-mode)))
+  (add-to-list 'project-switch-commands '(ghostel-project "Ghostel") t))
 
-;; New terminals open at the current tab's root, not the current buffer's
-;; project (whose git root may be elsewhere, or above the tab's root).
-(defun tyler/ghostel-tabspace (&optional arg)
-  "Like `ghostel-project', but rooted at the current tabspace's root.
-Falls back to `ghostel-project' in tabs without a root.  ARG is passed
-through to `ghostel-project'."
-  (interactive "P")
-  (if-let* ((root (and (fboundp 'tabspaces--get-project-for-tab)
-                       (tabspaces--get-project-for-tab
-                        (tabspaces--current-tab-name))))
-            ((file-directory-p root)))
-      (let* ((root (file-name-as-directory (expand-file-name root)))
-             (default-directory root)
-             ;; Make `project-current' return exactly the tab root, so the
-             ;; buffer name and reuse of existing terminals follow it too.
-             (project-find-functions (list (lambda (_) (cons 'transient root)))))
-        (ghostel-project arg))
-    (ghostel-project arg)))
+(defun tyler/ghostel-project-buffers ()
+  "Pick one of the current project's ghostel terminals, with preview.
+Like `ghostel-project-list-buffers', but with consult."
+  (interactive)
+  (require 'consult)
+  (require 'ghostel-project)
+  (consult-buffer
+   (list (list :name     "Project Terminals"
+               :narrow   ?t
+               :history  'buffer-name-history
+               :category 'buffer
+               :state    #'consult--buffer-state
+               :default  t
+               :items    (lambda ()
+                           (let ((terminals (ghostel-project-buffer-list)))
+                             (consult--buffer-query
+                              :predicate (lambda (b) (memq b terminals))
+                              :sort 'visibility
+                              :as #'buffer-name)))))))
 
 (use-package tabspaces
   :ensure t
